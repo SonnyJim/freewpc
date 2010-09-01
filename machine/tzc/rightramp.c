@@ -30,6 +30,8 @@ void sw_right_ramp_enter_task (void)
 	or dump it.  Do this once for each balls that enters the
 	ramp. */
 	do {
+		/* Wait for the ball to get to the holder */
+		task_sleep_sec (2);
 		while (kickout_locks > 0)
 			task_sleep (TIME_100MS);
 		
@@ -57,8 +59,7 @@ CALLSET_ENTRY (right_ramp, sw_right_ramp)
 	/* Scoring functions only happen during a game */
 	if (!in_live_game)
 		return;
-	
-	score (SC_10K);
+	callset_invoke (shot_rightramp);
 	sound_send (SND_RIGHT_RAMP_DEFAULT_ENTER);
 }
 

@@ -4,6 +4,7 @@ CALLSET_ENTRY (slot, dev_slot_enter)
 {
 	if (event_did_follow (dead_end, slot)
 		|| event_did_follow (piano, slot)
+		|| event_did_follow (skill, slot)
 		|| event_did_follow (camera, slot))
 	{
 		/* dead end was recently hit, so ignore slot */
@@ -18,6 +19,7 @@ CALLSET_ENTRY (slot, dev_slot_enter)
 	else
 	{
 		/* Slot was hit */
+		callset_invoke (shot_slot);
 	}
 }
 

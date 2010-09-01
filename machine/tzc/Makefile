@@ -69,7 +69,7 @@ SCHED_HEADERS += build/left_sling.h build/right_sling.h build/left_jet.h \
 	build/right_jet.h build/lower_jet.h build/shooter_div.h 
 
 GAME_OBJS = config.o rocket.o magnet.o slot.o piano.o camera.o deadend.o rightramp.o \
-	skill.o leffs.o autofire.o
+	skill.o leffs.o autofire.o leftramp.o challenge.o lock.o
 
 GAME_TEST_OBJS =
 

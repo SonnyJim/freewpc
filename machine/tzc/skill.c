@@ -22,6 +22,22 @@
 
 CALLSET_ENTRY (skill, sw_skill_bottom)
 {
+	callset_invoke (any_skill_switch);
+}
+
+CALLSET_ENTRY (skill, sw_skill_center)
+{
+	callset_invoke (any_skill_switch);
+}
+
+CALLSET_ENTRY (skill, sw_skill_top)
+{
+	event_can_follow (skill, slot, TIME_3S);
+	callset_invoke (any_skill_switch);
+}
+
+CALLSET_ENTRY (skill, any_skill_switch)
+{
 	set_valid_playfield ();
 }
 

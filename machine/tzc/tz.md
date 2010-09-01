@@ -12,7 +12,7 @@
 # General section (before a [section] header is given.
 # Miscellaneous parameters are specified here.
 ##########################################################################
-Title: Twilight Zone
+Title: TZ Challenge
 
 include platform/wpc/wpc-fliptronic.md
 
@@ -42,7 +42,7 @@ define MACHINE_HAS_UPPER_RIGHT_FLIPPER
 define MACHINE_AMODE_FLIPPER_SOUND_CODE   SND_THUD
 define CONFIG_TZONE_IP y
 
-define CONFIG_TIMED_GAME 120
+define CONFIG_TIMED_GAME 60
 define CONFIG_TIMED_GAME_MAX 255
 
 ##########################################################################
@@ -394,7 +394,7 @@ Blue Lamps: COLOR:blue
 Amber Lamps: COLOR:amber
 Unlit shots: Dead End, Slot Machine, Piano Panel, Ramp Battle, Camera
 Inlanes: Left Inlane1, Left Inlane2, Right Inlane
-Chaosmb Jackpots: Multiball, Ramp Battle, Piano Jackpot, Camera, Power Payoff, Dead End
+Challenge shots: Multiball, Ramp Battle, Piano Panel, Slot Machine, Camera, Dead End
 
 #------------------------------------------------------------------------
 # The remaining sections describe software aspects, and not the physical
@@ -440,38 +440,6 @@ Volume Change: MUS_SUPER_SLOT
 # A list of all scores needed by the game rules.
 ##########################################################################
 [scores]
-10:
-100:
-500:
-1K:
-2500:
-5K:
-5130:
-10K:
-15K:
-20K:
-25K:
-30K:
-40K:
-50K:
-75K:
-100K:
-150K:
-200K:
-250K:
-500K:
-750K:
-1M:
-2M:
-3M:
-4M:
-5M:
-10M:
-20M:
-30M:
-40M:
-50M:
-100M:
 
 ##########################################################################
 # The default high scores.  Use GC to indicate the grand champion.
@@ -498,6 +466,7 @@ GC: BCD, 500.000.000
 # Display effects
 ##########################################################################
 [deffs]
+Challenge Running: page(MACHINE_PAGE), runner, PRI_JACKPOT
 
 ##########################################################################
 # Lamp effects

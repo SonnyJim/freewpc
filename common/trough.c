@@ -46,15 +46,19 @@ static void handle_outhole (void)
 {
 	while (switch_poll (SW_OUTHOLE))
 	{
-		/* TODO : For TZ, this keeps a ball on the outhole even
+		/* For TZ, this keeps a ball on the outhole even
 		when it could be moved to far left trough,
-		which is not part of the trough device. */
+		which is not part of the trough device.
+		See sw_far_left_trough_monitor in gumball.c */
 		if (device_full_p (device_entry (DEVNO_TROUGH)))
 		{
 			task_sleep_sec (1);
 		}
 		else
 		{
+			/* Allow time for ball to settle in outhole */
+			task_sleep (TIME_200MS);
+			/* Kick it into the trough */
 			sol_request (SOL_OUTHOLE);
 			task_sleep_sec (2);
 		}

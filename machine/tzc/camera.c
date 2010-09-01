@@ -12,5 +12,6 @@ CALLSET_ENTRY (camera, sw_camera)
 	else
 	{
 		/* Camera was hit */
+		callset_invoke (shot_camera);
 	}
 }

@@ -40,7 +40,6 @@ void sw_autofire (void)
 	failed to kick properly; some retry logic is needed. */
 	sol_stop (SOL_RAMP_DIVERTOR);
 	shooter_div_stop ();
-	score (SC_100);
 }
 
 CALLSET_ENTRY (autofire, sw_autofire1)

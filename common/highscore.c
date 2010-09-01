@@ -61,7 +61,7 @@ U8 high_score_position;
 U8 high_score_player;
 
 #ifdef MACHINE_TZ
-	extern __local__ bool flipcode_used;
+//	extern __local__ bool flipcode_used;
 #endif
 
 /** The default grand champion score */
@@ -325,7 +325,7 @@ void high_score_check_player (U8 player)
 	/* Invalidate the score if a flipcode was used */
 
 #ifdef MACHINE_TZ
-	if (flipcode_used)
+//	if (flipcode_used)
 		return;
 #endif
 
