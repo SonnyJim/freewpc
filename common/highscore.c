@@ -331,12 +331,8 @@ void high_score_check_player (U8 player)
 	U8 hs;
 
 #ifdef MACHINE_TZ
-<<<<<<< HEAD
-//	if (flipcode_used)
-=======
 	/* Invalidate the score if a flipcode was used */
 	if (flipcode_used)
->>>>>>> v1.0-rc
 		return;
 #endif
 
