@@ -41,6 +41,7 @@ U8 spiralaward;
 __local__ U8 spiralawards_collected; 
 __local__ bool spiralaward_set_completed; 
 extern __local__ U8 mpf_enable_count;
+extern __local__ U8 door_panels_started;
 
 const char *spiralaward_names[] = {
 	"2 MILLION",
@@ -59,14 +60,12 @@ const lampnum_t spiralaward_lamps[] = {
 	LM_SPIRAL_10M,
 	LM_SPIRAL_EB
 };
-
-void spiralaward_collected_deff (void)
+static void write_spiralaward_text (void)
 {
-	dmd_alloc_low_clean ();
 	if (spiralawards_collected < 6)
 	{
-		font_render_string_center (&font_var5, 64, 20, spiralaward_names[spiralaward]);
-		font_render_string_center (&font_fixed6, 64, 5, "SPIRAL AWARD");
+		font_render_string_center (&font_quadrit, 64, 20, spiralaward_names[spiralaward]);
+		font_render_string_center_ytop (&font_bitcube10, 64, 1, "SPIRAL AWARD");
 	}
 	else 
 	{
@@ -74,10 +73,35 @@ void spiralaward_collected_deff (void)
 		sprintf ("20 MILLION");
 		font_render_string_center (&font_term6, 64, 15, sprintf_buffer);
 		font_render_string_center (&font_term6, 64, 25, spiralaward_names[spiralaward]);
-	
 	}
-	dmd_show_low ();
-	task_sleep_sec (2);
+}
+
+void spiralaward_collected_deff (void)
+{	
+	dmd_alloc_pair_clean ();
+	U16 fno;
+	for (fno = IMG_LOOP_END; fno >= IMG_LOOP_START; fno -= 2)
+	{
+		dmd_map_overlay ();
+		dmd_clean_page_low ();
+		write_spiralaward_text ();
+		dmd_text_outline ();
+		dmd_alloc_pair ();
+		frame_draw (fno);
+		callset_invoke (score_overlay);
+		dmd_overlay_outline ();
+		dmd_show2 ();
+		task_sleep (TIME_33MS);
+	}
+	for (fno = 0; fno < 20; fno++)
+	{
+		dmd_alloc_pair_clean ();
+		write_spiralaward_text ();
+		dmd_copy_low_to_high ();
+		callset_invoke (score_overlay);
+		dmd_show2 ();
+		task_sleep (TIME_100MS);
+	}
 	deff_exit ();
 }
 
@@ -103,9 +127,15 @@ CALLSET_ENTRY (spiralaward, start_spiralaward_timer)
 		&& single_ball_play ())
 	{
 		timer_restart_free (GID_SPIRALAWARD, TIME_3S);
-		/* Allow the ball to pass through the loop */
-		magnet_disable_catch (MAG_RIGHT);
+		/* Allow the ball to pass through the loop,
+		 * but not if the pb is out to help detection 
+		 */
+		if (!global_flag_test (GLOBAL_FLAG_POWERBALL_IN_PLAY))
+			magnet_disable_catch (MAG_RIGHT);
 		leff_start (LEFF_SPIRALAWARD);
+		/* Only show the hint the first two times */
+		if (spiralawards_collected < 1 && !spiralaward_set_completed);
+			deff_start (DEFF_SHOOT_RIGHT_LOOP);
 		/* Created as a task so it doesn't lock the calling thread */
 		task_create_anon (spiralaward_magnet_disable_task);
 	}
@@ -113,7 +143,7 @@ CALLSET_ENTRY (spiralaward, start_spiralaward_timer)
 
 static void award_spiralaward (void)
 {	
-	spiralawards_collected++;
+	bounded_increment (spiralawards_collected, 6);
 	
 	/* Pick a random award, random_scaled returns N-1 */
 	spiralaward = random_scaled (6);
@@ -144,9 +174,13 @@ static void award_spiralaward (void)
 			break;
 		case 4:
 			sound_send (SND_TEN_MILLION_POINTS);
-			/* Light the 10M door panel */
-			lamp_on (LM_PANEL_10M);
 			score (SC_10M);
+			/* Light the 10M door panel */
+			if (!lamp_test (LM_PANEL_10M))
+			{
+				lamp_on (LM_PANEL_10M);
+				door_panels_started++;
+			}
 			break;
 		case 5:
 			sound_send (SND_GET_THE_EXTRA_BALL);
@@ -175,8 +209,9 @@ static void award_spiralaward (void)
 
 CALLSET_ENTRY (spiralaward, award_right_loop)
 {
-	if (task_kill_gid (GID_SPIRALAWARD))
+	if (task_kill_gid (GID_SPIRALAWARD_APPROACHING))
 	{
+		task_kill_gid (GID_SPIRALAWARD);
 		leff_stop (LEFF_SPIRALAWARD);
 		sound_send (SND_SLOT_PAYOUT);
 		award_spiralaward ();

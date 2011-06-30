@@ -25,7 +25,7 @@
  * There's a few in loop.c
  * */
 
-/* CALLSET_SECTION (combo, __machine2__) */
+/* CALLSET_SECTION (combo, __machine3__) */
 
 
 #include <freewpc.h>
@@ -34,7 +34,7 @@ U8 two_way_combos;
 U8 three_way_combos;
 U8 lucky_bounces;
 
-bool slot_stdm_death;
+bool stdm_death;
 bool unfair_death;
 
 static void lucky_bounce (void)
@@ -45,10 +45,17 @@ static void lucky_bounce (void)
 	bounded_increment (lucky_bounces, 99);
 }
 
-/* Left ramp, Right ramp, Piano combo */
+/* Left ramp, Right ramp, Piano combo and Left ramp, lock, camera combo */
 CALLSET_ENTRY (combo, sw_left_ramp_exit)
 {
 	event_can_follow (left_ramp, right_ramp, TIME_5S);
+	timer_restart_free (GID_L_RAMP_TO_LOCK, TIME_5S);
+}
+
+CALLSET_ENTRY (combo, dev_lock_enter)
+{
+	if (task_find_or_kill_gid (GID_L_RAMP_TO_LOCK))
+		timer_restart_free (GID_L_RAMP_TO_LOCK_TO_CAMERA, TIME_4S);
 }
 
 CALLSET_ENTRY (combo, sw_right_ramp)
@@ -107,7 +114,7 @@ CALLSET_ENTRY (combo, sw_standup_7)
 CALLSET_ENTRY (combo, sw_piano)
 {
 //TODO Hack to remove piano.c
-	device_switch_can_follow (piano, slot, TIME_3S + TIME_500MS);
+	device_switch_can_follow (piano, slot, TIME_3S + TIME_200MS);
 
 	if (event_did_follow (right_loop, piano))
 	{
@@ -149,9 +156,7 @@ CALLSET_ENTRY (combo, award_right_loop)
 	/* Lucky bounce combo */
 	event_can_follow (right_loop, locked_ball, TIME_3S);
 	/* 2 way combos */
-	event_can_follow (right_loop, piano, TIME_1S + TIME_700MS);
-	event_can_follow (right_loop, camera, TIME_5S);
-	//event_can_follow (right_loop, hitchhiker, TIME_4S);
+	event_can_follow (right_loop, piano, TIME_2S);
 }
 
 CALLSET_ENTRY (combo, award_left_loop)
@@ -200,16 +205,24 @@ CALLSET_ENTRY (combo, sw_hitchhiker)
 	}
 }
 
+/* Left ramp -> STDM */
 CALLSET_ENTRY (combo, sw_left_ramp_enter)
 {
-	event_can_follow (slot_kick, outhole, TIME_1S + TIME_500MS);
+	event_can_follow (stdm, outhole, TIME_2S);
 }
 
-/* Slot STDM handler */
+/* Clock target -> STDM */
+CALLSET_ENTRY (combo, sw_clock_target)
+{
+	event_can_follow (stdm, outhole, TIME_2S);
+}
+
+/* STDM handler */
 CALLSET_ENTRY (combo, sw_outhole)
 {
-	if (event_did_follow (slot_kick, outhole) && !ballsave_test_active ())
-		slot_stdm_death = TRUE;
+	if ((event_did_follow (slot_kick, outhole) || event_did_follow (stdm, outhole))
+		&& !ballsave_test_active ())
+		stdm_death = TRUE;
 }
 
 /* Jet death handler */
@@ -241,6 +254,6 @@ CALLSET_ENTRY (combo, start_ball)
 	two_way_combos = 0;
 	three_way_combos = 0;
 	lucky_bounces = 0;
-	slot_stdm_death = FALSE;
+	stdm_death = FALSE;
 	unfair_death = FALSE;
 }

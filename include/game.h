@@ -21,11 +21,15 @@
 #ifndef _GAME_H
 #define _GAME_H
 
+#if (MACHINE_DMD == 1)
+#define MAX_PLAYERS 6
+#else
 #define MAX_PLAYERS 4
+#endif
 
-extern U8 in_game;
-extern U8 in_bonus;
-extern U8 in_tilt;
+extern __fastram__ U8 in_game;
+extern __fastram__ U8 in_bonus;
+extern __fastram__ U8 in_tilt;
 extern U8 in_test;
 extern U8 valid_playfield;
 extern __nvram__ U8 num_players;

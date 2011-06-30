@@ -22,10 +22,11 @@
 
 #include <freewpc.h>
 
-
 U8 clock_millions_mode_timer;
 U8 clock_mode_hits;
 score_t clock_mode_score;
+
+extern U8 chaosmb_hits_to_relight;
 
 void clock_millions_mode_init (void);
 void clock_millions_mode_exit (void);
@@ -60,42 +61,114 @@ void clock_millions_mode_total_deff (void)
 
 
 void clock_millions_explode_deff (void)
-{
-	dmd_alloc_low_clean ();
+{	
+	dmd_alloc_pair_clean ();
+	U16 fno;
+	sound_send (SND_GREED_MODE_BOOM);
+	for (fno = IMG_EXPLODE_START; fno <= IMG_EXPLODE_END; fno += 2)
+	{
+		dmd_map_overlay ();
+		dmd_clean_page_low ();
+		font_render_string_center (&font_fixed6, 64, 10, "CLOCK DESTROYED");
+		font_render_string_center (&font_mono5, 64, 21, "20 MILLION");
+		dmd_text_outline ();
+		dmd_alloc_pair ();
+		frame_draw (fno);
+		dmd_overlay_outline ();
+		dmd_show2 ();
+		task_sleep (TIME_33MS);
+	}
+	dmd_alloc_pair_clean ();
 	font_render_string_center (&font_fixed6, 64, 10, "CLOCK DESTROYED");
 	font_render_string_center (&font_mono5, 64, 21, "20 MILLION");
-	dmd_show_low ();
+	dmd_copy_low_to_high ();
+	dmd_show2 ();
 	task_sleep_sec (2);
 	deff_exit ();
-
 }
 
 void clock_millions_hit_deff (void)
-{
-	dmd_alloc_low_clean ();
+{	
+	U16 fno;
+	U16 img_start = 0;
+	U16 img_end = 0;
+	dmd_alloc_pair_clean ();
+	switch (random_scaled (3))
+	{
+		case 0:
+			img_start = IMG_FLASH_START;
+			img_end = IMG_FLASH_END;
+			break;
+		case 1:
+			img_start = IMG_FLASHCENTRE_START;
+			img_end = IMG_FLASHCENTRE_END;
+			break;
+		case 2:
+			img_start = IMG_FLASHLEFT_START;
+			img_end = IMG_FLASHLEFT_END;
+			break;
+	}
+
+	for (fno = img_start; fno < img_end; fno += 2)
+	{
+		U8 x = random_scaled (4);
+		U8 y = random_scaled (4);
+		dmd_map_overlay ();
+		dmd_clean_page_low ();
+
+		psprintf ("CLOCK HIT %d TIME", "CLOCK HIT %d TIMES", clock_mode_hits);
+		font_render_string_center (&font_fixed6, 64 + x, 10 + y, sprintf_buffer);
+		sprintf_score (clock_mode_score);
+		font_render_string_center (&font_mono5, 64, 21, sprintf_buffer);
+	
+		dmd_text_outline ();
+		dmd_alloc_pair ();
+		frame_draw (fno);
+		dmd_overlay_outline ();
+		dmd_show2 ();
+		task_sleep (TIME_33MS);
+	}
+	/* Redraw it so the 'HITS' text is centred */
+	dmd_clean_page_low ();
+	dmd_clean_page_high ();
+	dmd_alloc_low ();
 	psprintf ("CLOCK HIT %d TIME", "CLOCK HIT %d TIMES", clock_mode_hits);
 	font_render_string_center (&font_fixed6, 64, 10, sprintf_buffer);
 	sprintf_score (clock_mode_score);
 	font_render_string_center (&font_mono5, 64, 21, sprintf_buffer);
-	dmd_show_low ();
+	dmd_show_low ();	
 	task_sleep_sec (2);
 	deff_exit ();
 }
 
 void clock_millions_mode_deff (void)
 {
+	//U16 fno;
 	for (;;)
 	{
-		dmd_alloc_low_clean ();
-		font_render_string_center (&font_var5, 64, 5, "CLOCK MILLIONS");
-		sprintf_current_score ();
-		font_render_string_center (&font_fixed6, 64, 16, sprintf_buffer);
-		font_render_string_center (&font_var5, 64, 27, "SHOOT CLOCK");
-		sprintf ("%d", clock_millions_mode_timer);
-		font_render_string (&font_var5, 2, 2, sprintf_buffer);
-		font_render_string_right (&font_var5, 126, 2, sprintf_buffer);
-		dmd_show_low ();
-		task_sleep (TIME_200MS);
+//		for (fno = IMG_CLOCK_START; fno <= IMG_CLOCK_END; fno += 2)
+//		{
+			dmd_alloc_pair_clean ();
+	//		dmd_map_overlay ();
+	//		dmd_clean_page_low ();
+	
+			font_render_string_center (&font_nayupixel10, 64, 5, "CLOCK MILLIONS");
+			sprintf_current_score ();
+			font_render_string_center (&font_quadrit, 64, 16, sprintf_buffer);
+			psprintf ("SHOOT CLOCK 1 MORE TIME", "SHOOT CLOCK %d MORE TIMES", 6 - clock_mode_hits);
+			font_render_string_center (&font_var5, 64, 27, sprintf_buffer);
+			sprintf ("%d", clock_millions_mode_timer);
+			font_render_string (&font_var5, 2, 2, sprintf_buffer);
+			font_render_string_right (&font_var5, 126, 2, sprintf_buffer);
+	//		dmd_text_outline ();
+		//	dmd_alloc_pair ();
+			//frame_draw (fno);
+			dmd_copy_low_to_high ();
+			callset_invoke (score_overlay);
+		//	dmd_overlay_outline ();
+			dmd_show2 ();
+			task_sleep (TIME_66MS);
+//		}
 	}
 }
 
@@ -121,8 +194,11 @@ CALLSET_ENTRY (clock_millions, sw_clock_target)
 			score_add (clock_mode_score, score_table[SC_5M]);	
 			deff_start (DEFF_CLOCK_MILLIONS_HIT);
 		}
+		if (!global_flag_test (GLOBAL_FLAG_CHAOSMB_RUNNING))
+			tz_clock_reverse_direction ();
+		tz_clock_set_speed (clock_mode_hits);
 	}
-	else
+	else if (!global_flag_test (GLOBAL_FLAG_CHAOSMB_RUNNING))
 	{
 		callset_invoke (sw_jet_noflash);
 		score (SC_50K);
@@ -135,16 +211,19 @@ void clock_millions_mode_init (void)
 	clock_mode_hits = 0;
 	score_zero (clock_mode_score);
 	lamp_tristate_flash (LM_CLOCK_MILLIONS);
+	tz_clock_start_forward ();
 }
 
 void clock_millions_mode_expire (void)
 {
-	lamp_tristate_off (LM_CLOCK_MILLIONS);
+	if (clock_mode_hits <= 2)
+		callset_invoke (start_hurryup);
 }
 
 void clock_millions_mode_exit (void)
 {
 	lamp_tristate_off (LM_CLOCK_MILLIONS);
+	tz_clock_reset ();
 }
 
 CALLSET_ENTRY (clock_millions, end_ball)

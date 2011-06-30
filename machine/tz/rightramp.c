@@ -22,7 +22,6 @@
 #include <freewpc.h>
 #include <bridge_open.h>
 
-extern __machine__ bool mpf_ready_p (void);
 extern void award_unlit_shot (U8 unlit_called_from);
 
 U8 right_ramps_entered;
@@ -33,9 +32,17 @@ U8 unlit_right_ramps;
 void shoot_hitch_deff (void)
 {
 	dmd_alloc_low_clean ();
-	dmd_sched_transition (&trans_scroll_right);	
-	font_render_string_center (&font_mono5, 64, 6, "SHOOT HITCHHIKER");
-	font_render_string_center (&font_mono5, 64, 22, "TO UNLOCK POWER");
+	dmd_sched_transition (&trans_scroll_left);	
+	if (hurryup_active ())
+	{
+		font_render_string_center (&font_fireball, 64, 8, "SHOOT");
+		font_render_string_center (&font_quadrit, 64, 22, "POWER PAYOFF");
+	}
+	else
+	{
+		font_render_string_center (&font_quadrit, 64, 6, "SHOOT HITCHHIKER");
+		font_render_string_center (&font_quadrit, 64, 22, "TO UNLOCK POWER");
+	}
 	dmd_show_low ();
 	task_sleep_sec (1);
 	deff_exit ();
@@ -56,7 +63,9 @@ void sw_right_ramp_enter_task (void)
 			unlit_right_ramps = 0;
 			bridge_open_start ();
 			task_sleep_sec (3);
-			bridge_open_stop ();
+			/* Don't close if another ball is on it's way */
+			if (right_ramps_entered == 1)
+				bridge_open_stop ();
 		}
 		else
 		{
@@ -66,28 +75,43 @@ void sw_right_ramp_enter_task (void)
 			award_unlit_shot (SW_RIGHT_RAMP);
 
 			 /* Show an animation hint if not enabled for mpf */
-			if (unlit_right_ramps == 3 && !global_flag_test (GLOBAL_FLAG_MULTIBALL_RUNNING))
+			if ((unlit_right_ramps == 3  || hurryup_active ())
+				&& !global_flag_test (GLOBAL_FLAG_MULTIBALL_RUNNING))
 				deff_start (DEFF_SHOOT_HITCH);
 			else if (global_flag_test (GLOBAL_FLAG_MULTIBALL_RUNNING)
 					&& global_flag_test (GLOBAL_FLAG_MB_JACKPOT_LIT))
 			{
 				deff_start (DEFF_SHOOT_JACKPOT);
-				sound_send (SND_TWILIGHT_ZONE_SHORT_SOUND);
 			}
 			task_sleep_sec (2);
 	
 			/* Wait until allowed to kickout */
+			/* TODO BUG? */
 			while (kickout_locks > 0)
 				task_sleep (TIME_100MS);
 			
 			/* Drop the ball back to the playfield */
 			sound_send (SND_RIGHT_RAMP_EXIT);
 			bridge_open_start ();
-			task_sleep (TIME_500MS);
+			task_sleep (TIME_300MS);
+			/* Sleep a bit longer if multiball, so we knock any following
+			 * balls back to the playfield */
+			if (multi_ball_play ())
+				task_sleep (TIME_200MS);
 			bridge_open_stop ();
 		}
 	} while (--right_ramps_entered > 0);
+	/* Failsafe */
+	bridge_open_stop ();
 	task_exit ();
+}
+
+CALLSET_ENTRY (right_ramp, mpf_entered)
+{
+	/* Only stop the divertor during single all, otherwise we might knock
+	 * another ball off on it's way in */
+	if (right_ramps_entered == 1)
+		bridge_open_stop ();
 }
 
 CALLSET_ENTRY (right_ramp, sw_right_ramp)

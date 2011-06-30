@@ -1,5 +1,5 @@
 /*
- * Copyright 2006, 2007, 2008, 2009, 2010 by Brian Dominy <brian@oddchange.com>
+ * Copyright 2006-2011 by Brian Dominy <brian@oddchange.com>
  *
  * This file is part of FreeWPC.
  *
@@ -82,13 +82,19 @@ U8 player_up;
 
 /** The number of the current ball in play */
 U8 ball_up;
+__local__ U8 player_ball_up;
 
 /** Nonzero if the current ball will automatically end after a certain
 period of time.  The value indicates the number of seconds. */
 U8 timed_game_timer;
 
 U8 timed_game_suspend_count;
+extern U8 score_ranks[MAX_PLAYERS];
 
+#ifdef MACHINE_TZ
+extern void loop_master_check (void);
+extern void combo_master_check (void);
+#endif
 void start_ball (void);
 
 
@@ -140,6 +146,7 @@ void dump_game (void)
 void serve_ball (void)
 {
 #ifdef MACHINE_TZ
+	/* If the trough is empty, drop one from the lock */
 	if (!switch_poll (SW_RIGHT_TROUGH) 
 		|| device_recount (device_entry (DEVNO_TROUGH)) == 0
 		|| device_recount (device_entry (DEVNO_LOCK)) >= 3)
@@ -206,6 +213,28 @@ void end_game (void)
 	}
 }
 
+
+/* Init per player ball count */
+CALLSET_ENTRY (game, start_player)
+{
+	player_ball_up = 1;
+}
+
+void switch_to_player_ranked (U8 ranking)
+{
+	if (ranking > num_players)
+		ranking = num_players;
+	if (ranking == 0)
+		ranking = 1;
+
+	/* Make sure the ranks are up to date */
+	callset_invoke (update_ranks);
+	/* Find the player and switch to them */
+	U8 i = 0;
+	while (score_ranks[i] != ranking)
+		i++;
+	player_up = i + 1;
+}
 
 /**
  * Handle end-of-ball.  This is called from the ball device
@@ -292,7 +321,7 @@ void end_ball (void)
 	if (decrement_extra_balls ())
 	{
 #ifdef DEFF_SHOOT_AGAIN
-		deff_start (DEFF_SHOOT_AGAIN);
+		deff_start_sync (DEFF_SHOOT_AGAIN);
 #endif
 #ifdef LEFF_SHOOT_AGAIN
 		leff_start (LEFF_SHOOT_AGAIN);
@@ -322,22 +351,42 @@ void end_ball (void)
 	 * Save and restore the local player data. */
 	if (num_players > 1)
 	{
-		player_save ();
-		player_up++;
-
-		if (player_up <= num_players)
+		if (system_config.lowest_goes_next == YES)
 		{
-			player_restore ();
-			start_ball ();
-			goto done;
+			player_ball_up++;
+			player_save ();
+			/* Special case so we switch to players 2,3 and 4 on the first ball */
+			if (ball_up == 1 && player_up != num_players)
+			{
+				player_up++;
+				player_restore ();
+				start_ball ();
+				goto done;
+			}
+			else
+			{
+				switch_to_player_ranked (num_players);
+				player_restore ();
+				ball_up = player_ball_up;
+			}
 		}
 		else
 		{
-			player_up = 1;
-			player_restore ();
+			player_save ();
+			player_up++;
+			if (player_up <= num_players)
+			{
+				player_restore ();
+				start_ball ();
+				goto done;
+			}
+			else
+			{
+				player_up = 1;
+				player_restore ();
+			}
 		}
 	}
-
 	/* If all players have had a turn, then increment the
 	 * current ball number.
 	 * In timed game, this step is skipped, as the game is
@@ -345,7 +394,8 @@ void end_ball (void)
 	 */
 	if (config_timed_game == OFF)
 	{
-		ball_up++;
+		if (system_config.lowest_goes_next == NO || num_players == 1)
+			ball_up++;
 		if (ball_up <= system_config.balls_per_game)
 		{
 			start_ball ();
@@ -353,6 +403,27 @@ void end_ball (void)
 		}
 	}
 
+	if (system_config.lowest_goes_next == YES && num_players != 1)
+	{
+		/* Search through the lowest scores and check that 
+		 * each player has played all their balls
+		 */
+		U8 i;
+		for (i = num_players; i != 0; i--)
+		{
+			switch_to_player_ranked (i);
+			player_restore ();
+			if (player_ball_up <= system_config.balls_per_game)
+			{
+				ball_up = player_ball_up;
+				start_ball ();
+				goto done;
+			}
+		}
+		/* All balls have been played, end game */
+		player_up = num_players;
+		player_restore ();
+	}
 	/* After the max balls per game have been played, go into
 	 * end game */
 	end_game ();
@@ -480,13 +551,11 @@ void start_ball (void)
 	current_score = scores[player_up - 1];
 
 	callset_invoke (start_ball);
-	/* Enable the game scores on the display.  The first deff started
-	 * is low in priority and is shown whenever there is nothing else
-	 * going on.  The second deff runs briefly at high priority, to
-	 * ensure that the scores are shown at least briefly at the start of
-	 * ball (e.g., in case a skill shot deff gets started).
+
+	/* Ensure that the scores are shown briefly at the start of
+	 * ball, via a high priority display effect.
 	 *
-	 * If this is the final ball for the player, then
+	 * If this is the final ball for the player, then also
 	 * display the 'goal', i.e. replay or extra ball target score;
 	 * or the next high score level.
 	 */
@@ -663,6 +732,12 @@ bool verify_start_ok (void)
 	 * loading balls into the gumball */
 	extern bool gumball_enable_from_trough;
 	if (gumball_enable_from_trough)
+		return FALSE;
+#endif
+
+#ifdef CONFIG_MUTE_AND_PAUSE
+	/* Don't allow adding players when paused */
+	if (task_find_gid (GID_MUTE_AND_PAUSE))
 		return FALSE;
 #endif
 	return TRUE;

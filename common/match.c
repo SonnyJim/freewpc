@@ -44,6 +44,32 @@ match_award (void)
 	knocker_fire ();
 }
 
+/*
+ * Draw the constant part of the match animation once.
+ */
+static void
+match_draw_scores (void)
+{
+	U8 n;
+	//TODO Dim any scores that aren't a winner
+	dmd_map_overlay ();
+	dmd_clean_page_low ();
+	font_render_string_right (&font_fixed6, 126, 1, "MATCH");
+
+	for (n = 0; n < num_players; n++)
+	{
+		if (n < 5)
+		{
+			sprintf ("%2b", &scores[n][BYTES_PER_SCORE-1]);
+			font_render_string_left (&font_mono5, 0, 6*n, sprintf_buffer);
+		}
+		else if (n == 5)
+		{	/* Put player 6's score over to the right*/
+			sprintf ("%2b", &scores[n][BYTES_PER_SCORE-1]);
+			font_render_string_left (&font_mono5, 13, 0, sprintf_buffer);
+		}
+	}
+}
 
 /** The display effect that runs to show the match.
  * This is a default effect that could be overriden with something
@@ -55,6 +81,7 @@ match_deff (void)
 	U8 n;
 	U8 last_value = 0xFF;
 
+	match_draw_scores ();
 	for (n=0; n < 20; n++)
 	{
 		if (n == 19)
@@ -66,17 +93,15 @@ match_deff (void)
 			} while (value == last_value);
 		}
 		last_value = value;
-		dmd_alloc_low_clean ();
 #ifdef MACHINE_TZ
 		if (n == 19 && match_count)
 			sound_send (SND_JET_BUMPER_ADDED);
 		else
 			sound_send (SND_HITCHHIKER_COUNT);
 #endif
-		sprintf ("%2b", &scores[0][BYTES_PER_SCORE-1]);
-		font_render_string_left (&font_mono5, 0, 0, sprintf_buffer);
 
-		font_render_string_right (&font_fixed6, 126, 2, "MATCH");
+		dmd_alloc_low_clean ();
+		dmd_overlay ();
 		sprintf ("%2b", &value);
 		font_render_string_right (&font_fixed6, 126, 22, sprintf_buffer);
 		dmd_show_low ();

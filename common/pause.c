@@ -26,20 +26,7 @@
 #error "CONFIG_MUTE_AND_PAUSE unsupported because no computer-controlled flippers"
 #endif
 
-void mute_and_pause_monitor (void)
-{
-	flipper_hold_on ();
-	lamp_on (LM_BUY_IN_BUTTON);
-	kickout_lock (KLOCK_USER);
-	music_disable ();
-	for (;;)
-	{
-		ball_search_timer_reset ();
-		/* TODO - this task should timeout after awhile */
-		task_sleep_sec (5);
-	}
-	task_exit ();
-}
+U8 mute_and_pause_timeout;
 
 void mute_and_pause_stop (void)
 {
@@ -48,8 +35,27 @@ void mute_and_pause_stop (void)
 	kickout_unlock (KLOCK_USER);
 	lamp_off (LM_BUY_IN_BUTTON);
 	flipper_hold_off ();
+	callset_invoke (machine_unpaused);
 }
 
+void mute_and_pause_monitor (void)
+{
+	flipper_hold_on ();
+	lamp_on (LM_BUY_IN_BUTTON);
+	kickout_lock (KLOCK_USER);
+	music_disable ();
+	callset_invoke (machine_paused);
+
+	/* Timeout after 15 minutes */
+	mute_and_pause_timeout = 180; /* = (60secs * 15)/5 */
+	while (--mute_and_pause_timeout != 0)
+	{
+		ball_search_timer_reset ();
+		task_sleep_sec (5);
+	}
+	mute_and_pause_stop ();
+	task_exit ();
+}
 
 /**
  * Handle the push button that toggles the state of mute/pause if enabled.
@@ -68,26 +74,11 @@ CALLSET_ENTRY (mute_and_pause, sw_buyin_button)
 	{
 		/* Stop mute/pause mode */
 		mute_and_pause_stop ();
-		#ifdef MACHINE_TZ
-			callset_invoke (tz_flipcode_entry_stop);
-		#endif
 	}
 	else
 	{
 		/* Start mute/pause mode */
 		task_create_gid (GID_MUTE_AND_PAUSE, mute_and_pause_monitor);
-		#ifdef MACHINE_TZ
-		/* Start TZ Flipcode entry if enabled 
-		 * and all the conditions are met */
-		if (!switch_poll (SW_LEFT_BUTTON) && !switch_poll (SW_RIGHT_BUTTON)
-			&& feature_config.tz_flipcodes == YES
-			&& system_config.tournament_mode != YES
-			&& !valid_playfield)
-		{	
-				mute_and_pause_stop ();
-				callset_invoke (tz_flipcode_entry);
-		}
-		#endif
 	}
 }
 

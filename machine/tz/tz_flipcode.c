@@ -37,8 +37,9 @@ extern bool juggle_ball;
 extern void intials_stop (void);
 extern void pin_stop (void);
 
-/* Used to invalidate high score */
-__local__ bool flipcode_used;
+/* Used to invalidate high score, 
+ * currently invalidates all scores of a multiplayer game */
+bool flipcode_used;
 
 U8 tz_flipcode_number;
 
@@ -52,7 +53,7 @@ struct {
 } tz_flipcodes[] = {
 	{ "BCD", "1234", "THE WIZARD"},
 	{ "FEK", "2345", "WELCOME BACK"},
-	{ "PUK", "3456", "EXTRA BALL LIT"},
+	{ "MAC", "3456", "EXTRA BALL LIT"},
 	{ "MET", "4567", "GET BACK TO IRC"},
 	{ "SAM", "5678", "MAX POWER"},
 	{ "SUN", "6789", "LIKE THE WEATHER"},
@@ -72,12 +73,17 @@ U8 strcmp (char *s1, char *s2)
 
 void tz_flipcode_entered_deff (void)
 {
-	dmd_alloc_pair ();
-	frame_draw (IMG_COW);
+	dmd_map_overlay ();
+	dmd_clean_page_low ();
+
 	sprintf ("HI %s", initials_data);
-	font_render_string_center (&font_times10, 40, 11, sprintf_buffer);
+	font_render_string_center (&font_fireball, 40, 11, sprintf_buffer);
 	font_render_string_center (&font_var5, 40, 24, tz_flipcodes[tz_flipcode_number].text);
-	
+
+	dmd_text_outline ();
+	dmd_alloc_pair ();
+//	frame_draw (IMG_COW);
+	dmd_overlay_outline ();
 	dmd_show2 ();
 	task_sleep_sec (3);
 	deff_exit ();
@@ -85,10 +91,10 @@ void tz_flipcode_entered_deff (void)
 
 void tz_flipcode_entry_deff (void)
 {
-	dmd_alloc_pair_clean ();
+	dmd_alloc_low_clean ();
 	font_render_string_center (&font_var5, 40, 11, "THE POWER");
 	font_render_string_center (&font_var5, 40, 22, "SAYS ...");
-	dmd_show2 ();
+	dmd_show_low ();
 	sound_send (SND_THUNDER1);
 	task_sleep_sec (2);
 	deff_exit ();
@@ -111,10 +117,14 @@ CALLSET_ENTRY (tz_flipcode, check_tz_flipcode)
 				/* FEK */
 				case 1:
 				//	juggle_ball = TRUE;
-					callset_invoke (door_start_bttz);
-					sound_send (SND_TIME_IS_A_ONEWAY_STREET);
+				//	flag_on (FLAG_SNAKE_READY);
+				//	deff_start_sync (DEFF_SNAKE_READY);
+					//callset_invoke (door_start_clock_millions);
+					callset_invoke (mball_start);
+					callset_invoke (mball_start_3_ball);
+					//tz_clock_request_time (2, 30);
 					break;
-				/* PUK */
+				/* MAC */
 				case 2:
 					light_easy_extra_ball ();
 					sound_send (SND_YOU_UNLOCK_THIS_DOOR);
@@ -146,7 +156,7 @@ CALLSET_ENTRY (tz_flipcode, check_tz_flipcode)
 			/* Store for deff */
 			tz_flipcode_number = i;
 			flipcode_used = TRUE;
-			deff_start (DEFF_TZ_FLIPCODE_ENTERED);
+			deff_start_sync (DEFF_TZ_FLIPCODE_ENTERED);
 			return;
 		}
 	}
@@ -160,16 +170,22 @@ void tz_flipcode_running (void)
 	SECTION_VOIDCALL (__common__, initials_enter);
 	SECTION_VOIDCALL (__common__, pin_enter);
 	callset_invoke (check_tz_flipcode);
-	music_set (MUS_TZ_IN_PLAY);
 	task_exit ();
 }
+
+void tz_flipcode_entry_stop (void)
+{
+	SECTION_VOIDCALL (__common__, pin_stop);
+	SECTION_VOIDCALL (__common__, initials_stop);
+}
+
 
 /* Abort flipcode entry if the ball leaves the plunger */
 CALLSET_ENTRY (tz_flipcode, any_pf_switch)
 {
 	if (task_kill_gid (GID_TZ_FLIPCODE_RUNNING))
 	{
-		callset_invoke (tz_flipcode_entry_stop);	
+		tz_flipcode_entry_stop ();	
 	}
 }
 
@@ -178,13 +194,23 @@ CALLSET_ENTRY (tz_flipcode, start_game)
 	flipcode_used = FALSE;
 }
 
-CALLSET_ENTRY (tz_flipcode, tz_flipcode_entry)
+CALLSET_ENTRY (tz_flipcode, machine_paused)
 {
-	task_create_gid (GID_TZ_FLIPCODE_RUNNING, tz_flipcode_running);
+	/* Start TZ Flipcode entry if enabled 
+	 * and all the conditions are met */
+	if (!switch_poll (SW_LEFT_BUTTON) && !switch_poll (SW_RIGHT_BUTTON)
+		&& feature_config.tz_flipcodes == YES
+		&& system_config.tournament_mode != YES
+		&& !valid_playfield)
+	{	
+		task_create_gid (GID_TZ_FLIPCODE_RUNNING, tz_flipcode_running);
+	}
 }
 
-CALLSET_ENTRY (tz_flipcode, tz_flipcode_entry_stop)
+CALLSET_ENTRY (tz_flipcode, machine_unpaused)
 {
-	SECTION_VOIDCALL (__common__, pin_stop);
-	SECTION_VOIDCALL (__common__, initials_stop);
+	if (task_kill_gid (GID_TZ_FLIPCODE_RUNNING))
+	{
+		tz_flipcode_entry_stop ();
+	}
 }

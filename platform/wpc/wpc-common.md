@@ -84,7 +84,7 @@ Credits: page(COMMON_PAGE), PRI_CREDITS
 Tilt Warning: page(COMMON_PAGE), PRI_TILT_WARNING
 Tilt: runner, page(COMMON_PAGE), PRI_TILT
 Game Over: page(EFFECT_PAGE), PRI_GAME_OVER
-Volume Change: page(EFFECT_PAGE), runner, PRI_VOLUME_CHANGE_DISPLAY
+Volume Change: page(EFFECT_PAGE), runner, PRI_VOLUME_CHANGE_DISPLAY, D_PAUSE
 Slam Tilt: page(COMMON_PAGE), runner, PRI_SLAMTILT
 Status Report: page(COMMON_PAGE), runner, PRI_STATUS
 Nonfatal Error: page(EFFECT_PAGE), PRI_DEBUGGER
@@ -117,7 +117,7 @@ lucida9:
 tinynum:
 var5:
 fixed6:
-cu17:
+#cu17:
 fixed10:
 term6:
 times8:

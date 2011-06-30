@@ -1,5 +1,5 @@
 /*
- * Copyright 2006, 2007, 2008, 2009, 2010 by Brian Dominy <brian@oddchange.com>
+ * Copyright 2006-2011 by Brian Dominy <brian@oddchange.com>
  *
  * This file is part of FreeWPC.
  *
@@ -29,9 +29,14 @@
  * This file implements a basic attract mode that can be used by any game.
  */
 
+/* Which page is to be shown */
 U8 amode_page;
 
+/* non-zero when the page has been requested to change */
 U8 amode_page_changed;
+
+/* Used to show the scores for 2 mins after a right flipper hold */
+bool amode_show_scores_long;
 
 void amode_page_change (S8 delta);
 
@@ -87,7 +92,10 @@ void amode_sleep_sec (U8 secs)
 	}
 }
 
-
+void amode_page_start (void)
+{
+	amode_page_changed = 0;
+}
 
 void amode_page_end (U8 secs)
 {
@@ -103,9 +111,14 @@ void amode_score_page (void)
 	dmd_show_low ();
 
 	/* Hold the scores up for a while longer than usual
-	 * in tournament mode. */
-	if (system_config.tournament_mode == YES)
+	 * in tournament mode or when triggered by a right button hold */
+	if (system_config.tournament_mode == YES || amode_show_scores_long)
+	{
+		/* Don't allow the player to skip past the scores for 10 seconds */
+		timer_restart_free (GID_AMODE_BUTTON_DEBOUNCE, TIME_10S);
+		amode_show_scores_long = FALSE;
 		amode_page_end (120);
+	}
 	else
 		amode_page_end (5);
 }
@@ -123,9 +136,19 @@ void amode_logo_page (void)
 		dmd_show2 ();
 		task_sleep (TIME_66MS);
 	}
-	amode_page_end (3);
+	amode_sleep_sec (3);
+	for (fno = IMG_FREEWPC; fno >= IMG_FREEWPC_SMALL; fno -= 2)
+	{
+		dmd_alloc_pair ();
+		frame_draw (fno);
+		dmd_show2 ();
+		task_sleep (TIME_66MS);
+	}
+	dmd_sched_transition (&trans_bitfade_slow);
+	amode_page_end (0);
 }
 #endif
+
 
 void amode_credits_page (void)
 {
@@ -134,7 +157,8 @@ void amode_credits_page (void)
 	amode_page_end (3);
 }
 
-void amode_freeplay_page (void)
+
+void amode_replay_page (void)
 {
 	if (system_config.replay_award != FREE_AWARD_OFF)
 	{
@@ -143,6 +167,7 @@ void amode_freeplay_page (void)
 	}
 	amode_page_end (0);
 }
+
 
 void amode_high_score_page (void)
 {
@@ -158,6 +183,7 @@ void amode_high_score_page (void)
 	amode_page_end (0);
 }
 
+
 #ifdef CONFIG_RTC
 void amode_date_time_page (void)
 {
@@ -169,13 +195,12 @@ void amode_date_time_page (void)
 }
 #endif
 
+
 void amode_kill_music (void)
 {
 	music_set (MUS_OFF);
 	amode_page_end (0);
 }
-
-
 
 void (*amode_page_table[]) (void) = {
 	amode_score_page,
@@ -183,46 +208,74 @@ void (*amode_page_table[]) (void) = {
 	amode_logo_page,
 #endif
 	amode_credits_page,
-	amode_freeplay_page,
+	amode_replay_page,
 	amode_high_score_page,
 #ifdef CONFIG_RTC
 	amode_date_time_page,
 #endif
 	amode_kill_music,
-#ifdef MACHINE_AMODE_EFFECTS
-	MACHINE_AMODE_EFFECTS
-#endif
 };
 
 
 __attribute__((noinline)) void amode_page_change (S8 delta)
 {
-	for (;;)
+	amode_page += delta;
+	/* Check for boundary cases */
+	if (amode_show_scores_long)
 	{
-		amode_page += delta;
-
-		/* Check for boundary cases */
-		if (amode_page >= 0xF0)
-		{
-			amode_page = (sizeof (amode_page_table) / sizeof (void *)) - 1;
-		}
-		else if (amode_page >= sizeof (amode_page_table) / sizeof (void *))
-		{
-			amode_page = 0;
-		}
-
-		/* Check for pages that should be skipped */
-
-		/* All done */
-		break;
+		amode_page = 0;
 	}
+	else if (amode_page >= 0xF0)
+	{
+		amode_page = (sizeof (amode_page_table) / sizeof (void *)) - 1;
+	}
+	else if (amode_page >= sizeof (amode_page_table) / sizeof (void *))
+	{
+		amode_page = 0;
+	}
+
+	/* TODO Check for pages that should be skipped? */
 	amode_page_changed = 1;
+}
+
+
+void amode_right_button_detect (void)
+{
+	/* Exit early if the player releases the button or presses the other
+	 * button at the same time */
+	U8 hold = TIME_5S / TIME_100MS;
+	while (hold > 0)
+	{
+		if (!switch_poll_logical (SW_RIGHT_BUTTON)
+				|| switch_poll_logical (SW_LEFT_BUTTON))
+		{
+			task_exit ();
+		}
+		task_sleep (TIME_100MS);
+		hold--;
+	}
+
+#ifdef MACHINE_AMODE_FLIPPER_SOUND_CODE
+	sound_send (MACHINE_AMODE_FLIPPER_SOUND_CODE);
+#endif
+	/* Switch to the scores page on the next page change */
+	amode_show_scores_long = TRUE;
+}
+
+
+bool amode_check_flipper_button (void)
+{
+	if (deff_get_active () == DEFF_AMODE
+		&& !timer_find_gid (GID_AMODE_BUTTON_DEBOUNCE))
+		return TRUE;
+	else
+		return FALSE;
 }
 
 
 CALLSET_ENTRY (amode, sw_left_button)
 {
-	if (deff_get_active () == DEFF_AMODE)
+	if (amode_check_flipper_button ())
 	{
 		amode_flipper_sound ();
 		if (amode_page_changed == 0)
@@ -231,14 +284,22 @@ CALLSET_ENTRY (amode, sw_left_button)
 }
 
 
+
 CALLSET_ENTRY (amode, sw_right_button)
 {
-	if (deff_get_active () == DEFF_AMODE)
+	if (amode_check_flipper_button ())
 	{
 		amode_flipper_sound ();
 		if (amode_page_changed == 0)
 			amode_page_change (1);
+		amode_right_button_detect ();
 	}
+}
+
+
+CALLSET_ENTRY (amode, init, start_game)
+{
+	amode_show_scores_long = FALSE;
 }
 
 
@@ -253,8 +314,12 @@ __attribute__((noreturn)) void system_amode_deff (void)
 	amode_page = 0;
 	for (;;)
 	{
+#ifdef MACHINE_CUSTOM_AMODE
 		if (amode_page == 1)
+		{
 			callset_invoke (amode_page);
+		}
+#endif
 		amode_page_table[amode_page] ();
 	}
 }

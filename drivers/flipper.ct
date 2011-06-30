@@ -90,7 +90,6 @@ CALLSET_ENTRY (@self, end_ball, tilt)
 	@class_enabled = NO_FLIPPERS;
 }
 
-
 @@
 @@file @self.h
 @@

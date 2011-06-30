@@ -23,6 +23,8 @@
 #include <m6809/math.h>
 #endif
 
+U8 balls_served;
+
 bool faster_quote_given;
 
 /** Filename: mach/config.c
@@ -44,7 +46,8 @@ static inline U8 decimal_to_bcd_byte (U8 decimal)
 
 void replay_code_to_score (score_t s, U8 val)
 {
-	s[1] = decimal_to_bcd_byte (val * 10);
+	
+		s[1] = decimal_to_bcd_byte (val * 10);
 }
 
 
@@ -57,8 +60,11 @@ CALLSET_ENTRY (tz, start_ball)
 CALLSET_ENTRY (tz, add_player)
 {
 #ifdef CONFIG_TZONE_IP
-	if (num_players > 1)
+	if (num_players >= 1 && num_players <= 4)
 		sound_send (SND_PLAYER_ONE + num_players - 1);
+	else
+		sound_send (SND_YOU_WANT_MORE);
+
 #endif
 }
 
@@ -113,3 +119,22 @@ CALLSET_ENTRY (tz, timed_game_tick)
 		default: break;
 	}
 }
+
+/* Hack to disable ballsave after first ball_serve */
+CALLSET_ENTRY (config, start_ball)
+{
+	balls_served = 0;
+}
+
+/* Reset the count so we can have a ballsave on the next ball only */
+CALLSET_ENTRY (config, mball_start)
+{
+	balls_served = 1;
+}
+
+
+CALLSET_ENTRY (config, serve_ball)
+{
+	balls_served++;	
+}
+

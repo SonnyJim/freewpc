@@ -56,8 +56,8 @@ static void handle_outhole (void)
 		}
 		else
 		{
-			/* Allow time for ball to settle in outhole */
-			task_sleep (TIME_200MS);
+			/* Wait for ball to settle before kicking */
+			task_sleep (TIME_300MS);
 			/* Kick it into the trough */
 			sol_request (SOL_OUTHOLE);
 			task_sleep_sec (2);

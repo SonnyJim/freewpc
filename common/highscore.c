@@ -34,11 +34,14 @@ struct high_score
 	score_t score;
 	U8 initials[HIGH_SCORE_NAMESZ];
 };
-
 #define HS_COUNT (NUM_HIGH_SCORES + 1)
 
 /** The high score table */
 __nvram__ struct high_score high_score_table[HS_COUNT];
+
+#ifdef CONFIG_ONE_HS_PER_PLAYER
+struct high_score high_score_table_backup[HS_COUNT];
+#endif
 
 
 /** A checksum descriptor for the high scores/initials */
@@ -61,7 +64,7 @@ U8 high_score_position;
 U8 high_score_player;
 
 #ifdef MACHINE_TZ
-//	extern __local__ bool flipcode_used;
+extern bool flipcode_used;
 #endif
 
 /** The default grand champion score */
@@ -310,10 +313,14 @@ void high_score_free (U8 position)
 	if (position < HS_COUNT-1)
 		high_score_free (position+1);
 
+#ifdef CONFIG_ONE_HS_PER_PLAYER
+	memcpy (&high_score_table_backup[position+1], &high_score_table_backup[position],
+		sizeof (struct high_score));
+#else
 	memcpy (&high_score_table[position+1], &high_score_table[position],
 		sizeof (struct high_score));
+#endif
 }
-
 
 /**
  * Check if player PLAYER has qualified for the high score board
@@ -322,16 +329,29 @@ void high_score_free (U8 position)
 void high_score_check_player (U8 player)
 {
 	U8 hs;
-	/* Invalidate the score if a flipcode was used */
 
 #ifdef MACHINE_TZ
+<<<<<<< HEAD
 //	if (flipcode_used)
+=======
+	/* Invalidate the score if a flipcode was used */
+	if (flipcode_used)
+>>>>>>> v1.0-rc
 		return;
+#endif
+
+#ifdef CONFIG_ONE_HS_PER_PLAYER
+	/* Copy the hs table to a backup location */
+	memcpy (&high_score_table_backup, &high_score_table, sizeof high_score_table);
 #endif
 
 	for (hs = 0; hs < HS_COUNT; hs++)
 	{
+#ifdef CONFIG_ONE_HS_PER_PLAYER
+		struct high_score *hsp = &high_score_table_backup[hs];
+#else
 		struct high_score *hsp = &high_score_table[hs];
+#endif
 		if ((score_compare (scores[player], hsp->score)) > 0)
 		{
 			/* The score qualifies for this position.  Push all
@@ -366,13 +386,53 @@ void high_score_award_credits (U8 *adjptr)
 	}
 }
 
+#ifdef CONFIG_ONE_HS_PER_PLAYER
+static bool score_is_players_highest (U8 position)
+{
+	struct high_score *hsp = &high_score_table_backup[position];
+	U8 hs;	
+	for (hs = 0; hs < position; hs++)
+	{
+		if (memcmp (&hsp->initials[hs], initials_data, HIGH_SCORE_WIDTH))
+			return FALSE;
+	}
+	return TRUE;
+}
+
+/* Remove players previous entry */
+static void remove_smaller_scores (U8 position)
+{
+	U8 hs;
+	for (hs = position + 1; hs < HS_COUNT; hs++;)
+	{
+	}
+}
+
+void you_have_done_better_deff (void)
+{
+	dmd_alloc_low_clean ();
+#if (MACHINE_DMD == 1)
+	font_render_string_center (&font_var5, 64, 3, "NOT YOUR BEST");
+#endif
+	font_render_string_center (&font_var5, 64, 10, "TRY HARDER");
+	font_render_string_center (&font_var5, 64, 17, "NEXT TIME");
+	dmd_show_low ();
+	task_sleep_sec (3);
+	deff_exit ();
+}
+#endif
 
 /** See if the given position in the high score table was modified and
  * needs initials entered.  POSITION is 1-4 for the regular spots
  * and 0 for the grand champion. */
 void high_score_enter_initials (U8 position)
 {
+
+#ifdef CONFIG_ONE_HS_PER_PLAYER
+	struct high_score *hsp = &high_score_table_backup[position];
+#else
 	struct high_score *hsp = &high_score_table[position];
+#endif
 	if (hsp->initials[0] < ' ')
 	{
 		dbprintf ("High score %d needs initials\n", position);
@@ -393,12 +453,31 @@ void high_score_enter_initials (U8 position)
 #endif
 		SECTION_VOIDCALL (__common__, initials_enter);
 
+
+#ifdef CONFIG_ONE_HS_PER_PLAYER
+		/* Scan the backup high score table for the initials and don't
+		 * write if the player has a higher score on the table */
+		if (feature_config.one_hs_entry == YES
+			&& score_is_players_highest (position) == FALSE)
+		{
+	//		deff_start_sync (DEFF_YOU_HAVE_DONE_BETTER);
+		}
+		else
+		{
+			pinio_nvram_unlock ();
+			memcpy (hsp->initials, initials_data, HIGH_SCORE_NAMESZ);
+			/* Copy the backup to the real table */
+			memcpy (&high_score_table, &high_score_backup, sizeof high_score_table);
+			pinio_nvram_lock ();
+			csum_area_update (&high_csum_info);
+		}
+#else
 		/* Save the initials to table entry */
 		pinio_nvram_unlock ();
 		memcpy (hsp->initials, initials_data, HIGH_SCORE_NAMESZ);
 		pinio_nvram_lock ();
 		csum_area_update (&high_csum_info);
-
+#endif
 		/* Award credits */
 		if (position == 0)
 		{

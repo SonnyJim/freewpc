@@ -57,6 +57,22 @@ void bttz_running_deff (void)
 	}
 }
 
+void tbc_deff (void)
+{
+	dmd_alloc_pair ();
+	dmd_clean_page_low ();
+	
+	font_render_string_center (&font_fixed6, 64, 4, "TO BE CONTINUED");
+	dmd_show_low ();
+	task_sleep_sec (1);
+	font_render_string_center (&font_var5, 64, 12, "FOR NOW, HAVE 100M");
+	sound_send (SND_KACHING);
+	dmd_sched_transition (&trans_bitfade_slow);
+	dmd_show_low ();
+	task_sleep_sec (2);
+	deff_exit ();
+}
+	
 void bttz_end_deff (void)
 {
 	dmd_alloc_pair ();
@@ -89,7 +105,10 @@ void bttz_start_task (void)
 
 CALLSET_ENTRY (bttz, door_start_bttz)
 {
-	task_create_anon (bttz_start_task);
+	//task_create_anon (bttz_start_task);
+	deff_start (DEFF_TBC);
+	score (SC_100M);
+	callset_invoke (reset_door);
 }
 
 /* Once the ballsave has run out, start holding balls in the autofire */
@@ -170,7 +189,7 @@ CALLSET_ENTRY (bttz, init)
 	hold_balls_in_autofire = FALSE;
 }
 
-CALLSET_ENTRY (bttz, game_end)
+CALLSET_ENTRY (bttz, end_game)
 {
 	balls_needed_to_load = 0;
 	hold_balls_in_autofire = FALSE;

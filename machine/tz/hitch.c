@@ -38,8 +38,8 @@ struct timed_mode_ops hitch_mode = {
 	.music = MUS_FASTLOCK_ADDAMS_FAMILY,
 	.deff_running = DEFF_HITCH_MODE,
 	.prio = PRI_GAME_MODE6,
-	.timer = &hitch_mode_timer,
 	.init_timer = 30,
+	.timer = &hitch_mode_timer,
 	.grace_timer = 3,
 	.pause = system_timer_pause,
 };
@@ -48,33 +48,34 @@ void hitchhiker_deff (void)
 {
 	/* Start a timer so jets won't stop animation */
 	timer_restart_free (GID_HITCHHIKER, TIME_3S);
+	dmd_alloc_pair_clean ();
 	U16 fno;
 	for (fno = IMG_HITCHHIKER_START; fno <= IMG_HITCHHIKER_END; fno += 2)
 	{
-		dmd_alloc_pair_clean ();
-		frame_draw (fno);
-		/* text can only be printed to the low page so we flip them */
-		dmd_flip_low_high ();
-		
+		dmd_map_overlay ();
+		dmd_clean_page_low ();
+			
 		if (timed_mode_running_p (&hitch_mode))
 		{
-			sprintf("10M");
-			font_render_string_center (&font_fixed6, 98, 5, sprintf_buffer);
+			sprintf("10 MILLION");
+			font_render_string_center (&font_fireball, 64, 16, sprintf_buffer);
 		}
 		else
 		{
 			sprintf ("HITCHERS");
-			font_render_string_center (&font_mono5, 98, 5, sprintf_buffer);
+			font_render_string_center (&font_nayupixel10, 98, 5, sprintf_buffer);
 			sprintf ("%d", hitch_count);
-			font_render_string_center (&font_fixed6, 99, 24, sprintf_buffer);
+			font_render_string_center (&font_quadrit, 99, 24, sprintf_buffer);
 		}	
-		/* Flip back again */
-		dmd_flip_low_high ();
-		
+	
+		dmd_text_outline ();
+		dmd_alloc_pair ();
+		frame_draw (fno);
+		dmd_overlay_outline ();
 		dmd_show2 ();
-		task_sleep (TIME_66MS);
+		//task_sleep (TIME_33MS);
 	}
-	task_sleep  (TIME_700MS);
+	task_sleep  (TIME_500MS);
 	/* Stop the timer so jets.c can show deffs again */
 	timer_kill_gid (GID_HITCHHIKER);
 	deff_exit ();
@@ -83,17 +84,23 @@ void hitchhiker_deff (void)
 
 void hitch_mode_deff (void)
 {
+	dmd_alloc_pair_clean ();
 	for (;;)
 	{
-		dmd_alloc_low_clean ();
-		font_render_string_center (&font_var5, 64, 5, "SHOOT HITCHHIKER");
+		dmd_map_overlay ();
+		dmd_clean_page_low ();
+		font_render_string_center (&font_nayupixel10, 64, 5, "SHOOT HITCHHIKER");
 		sprintf_current_score ();
-		font_render_string_center (&font_fixed6, 64, 16, sprintf_buffer);
-		font_render_string_center (&font_var5, 64, 27, "FOR 10M");
+		font_render_string_center (&font_antiqua, 64, 13, sprintf_buffer);
+		font_render_string_center (&font_nayupixel10, 64, 27, "FOR 10M");
 		sprintf ("%d", hitch_mode_timer);
 		font_render_string (&font_var5, 2, 2, sprintf_buffer);
 		font_render_string_right (&font_var5, 126, 2, sprintf_buffer);
-		dmd_show_low ();
+		dmd_text_outline ();
+		dmd_alloc_pair ();
+		frame_draw (IMG_HITCHHIKER_START);
+		dmd_overlay_outline ();
+		dmd_show2 ();
 		task_sleep (TIME_200MS);
 	}
 }
@@ -135,19 +142,8 @@ CALLSET_ENTRY (hitch, sw_hitchhiker)
 	}
 	bounded_increment (hitch_count, 99);
 	
-	/* Yes, I know it's ugly, I'll fix it at some point */
-	if (hitch_count == 5 ||
-		hitch_count == 10 ||
-		hitch_count == 15 ||
-		hitch_count == 20 ||
-		hitch_count == 30 ||
-		hitch_count == 40 ||
-		hitch_count == 50 ||
-		hitch_count == 60 ||
-		hitch_count == 70 ||
-		hitch_count == 80 ||
-		hitch_count == 90 ||
-		hitch_count == 99 )
+	if ((hitch_count < 20 && hitch_count % 5 == 0)
+		|| (hitch_count >= 20 && hitch_count % 10 == 0))
 	{
 		mpf_enable_count++;
 		sound_send (SND_ARE_YOU_READY_TO_BATTLE);

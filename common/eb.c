@@ -47,11 +47,11 @@ U8 hard_extra_balls_lit;
 /** Update the extra ball/shoot again lamps */
 static void update_extra_ball_lamps (void)
 {
-#if MACHINE_SHOOT_AGAIN_LAMP
+#ifdef MACHINE_SHOOT_AGAIN_LAMP
 	lamp_on_if (MACHINE_SHOOT_AGAIN_LAMP, extra_balls > 0);
 #endif /* MACHINE_SHOOT_AGAIN_LAMP */
 
-#if MACHINE_EXTRA_BALL_LAMP
+#ifdef MACHINE_EXTRA_BALL_LAMP
 	lamp_on_if (MACHINE_EXTRA_BALL_LAMP,
 		easy_extra_balls_lit || hard_extra_balls_lit)
 #endif /* MACHINE_EXTRA_BALL_LAMP */
@@ -63,8 +63,12 @@ can use this function to avoid lighting an extra ball if it will
 be impossible to collect it. */
 bool can_award_extra_ball (void)
 {
-	return ((extra_balls_earned < system_config.max_ebs)
-		&& (extra_balls_earned_this_bip < system_config.max_ebs_per_bip));
+	extern U8 tournament_mode_enabled;
+	if (system_config.tournament_mode || tournament_mode_enabled)
+		return FALSE;
+	else
+		return ((extra_balls_earned < system_config.max_ebs)
+			&& (extra_balls_earned_this_bip < system_config.max_ebs_per_bip));
 }
 
 

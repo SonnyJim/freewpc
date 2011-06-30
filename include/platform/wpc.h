@@ -92,7 +92,7 @@ AREA_DECL(nvram)
 /** The maximum alloted size of each player's local variables.
  * 5x this amount is allocated, one for the "live" variables and
  * 4 for the player save buffers. */
-#define LOCAL_SIZE		0x30U
+#define LOCAL_SIZE		0x2AU
 
 /** Returns the address of player P's save buffer. */
 #define LOCAL_SAVE_BASE(p)	(LOCAL_BASE + (LOCAL_SIZE * (p)))
@@ -218,7 +218,9 @@ extern U8 *linux_dmd_high_page;
 /** Toggle the diagnostic LED. */
 extern inline void pinio_active_led_toggle (void)
 {
-	io_toggle_bits (WPC_LEDS, WPC_LED_DIAGNOSTIC);
+	extern U8 wpc_led_reg;
+	wpc_led_reg ^= WPC_LED_DIAGNOSTIC;
+	writeb (WPC_LEDS, wpc_led_reg);
 }
 
 

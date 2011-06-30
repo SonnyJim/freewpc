@@ -33,6 +33,14 @@ void bonus_leff (void)
 		task_sleep_sec (5);
 }
 
+void select_mode_leff (void)
+{
+	triac_leff_disable (TRIAC_GI_MASK);
+	for (;;)
+		task_sleep_sec (5);
+}
+
+
 void gi_cycle_leff (void)
 {
 	U8 i;
@@ -130,7 +138,7 @@ static void slot_kickout_subtask (void)
 
 void slot_kickout_leff (void)
 {
-	if (multi_ball_play ())
+	if (live_balls != 1)
 	{
 		triac_leff_enable (TRIAC_GI_MASK);
 	}
@@ -139,7 +147,6 @@ void slot_kickout_leff (void)
 	triac_leff_enable (TRIAC_GI_MASK);
 	leff_exit ();
 }
-
 
 void gumball_strobe_leff (void)
 {
@@ -222,16 +229,16 @@ static void pf_strobe_down_subtask (void)
 		lamplist_apply (LAMPLIST_SORT2, leff_toggle);
 }
 
+
+
 void strobe_down_leff (void)
 {
-	triac_leff_disable (TRIAC_GI_MASK);
 	lamplist_set_apply_delay (TIME_16MS);
 	leff_create_peer (pf_strobe_down_subtask);
 	task_sleep (TIME_200MS);
 	leff_create_peer (pf_strobe_down_subtask);
 	task_sleep_sec (1);
 	task_kill_peers ();
-	triac_leff_enable (TRIAC_GI_MASK);
 	leff_exit ();
 }
 
@@ -362,6 +369,112 @@ void circle_out_leff (void)
 	lamplist_set_apply_delay (TIME_33MS);
 	lamplist_apply (LAMPLIST_CIRCLE_OUT, leff_toggle);
 	lamplist_apply (LAMPLIST_CIRCLE_OUT, leff_toggle);
+	leff_exit ();
+}
+
+static void piano_jackpot_collected_leff_task (void)
+{
+	lamplist_apply (LAMPLIST_CIRCLE_OUT, leff_toggle);
+	lamplist_apply (LAMPLIST_CIRCLE_OUT, leff_toggle);
+	task_exit ();
+}
+
+static void piano_jackpot_collected_leff_flasher_task (void)
+{
+	U8 i;
+	for (i=0; i < 8; i++)
+	{
+		flasher_pulse (FLASH_CLOCK_TARGET);
+		flasher_pulse (FLASH_RAMP1);
+		flasher_pulse (FLASH_GUMBALL_HIGH);
+		task_sleep (TIME_100MS);
+
+		flasher_pulse (FLASH_RAMP2);
+		flasher_pulse (FLASH_GUMBALL_MID);
+		task_sleep (TIME_100MS);
+
+		flasher_pulse (FLASH_GUMBALL_LOW);
+		flasher_pulse (FLASH_RAMP3_POWER_PAYOFF);
+		task_sleep (TIME_100MS);
+	}
+	task_exit ();
+}
+
+/* Turn the GI back on if a switch closure is detected during the jackpot leff */
+CALLSET_ENTRY (leffs, any_pf_switch)
+{
+	{
+		if (!single_ball_play () && leff_running_p (LEFF_PIANO_JACKPOT_COLLECTED)
+			&& !timer_find_gid (GID_GI_PF_SWITCH_TIMER))
+		{
+			task_kill_gid (GID_PIANO_JACKPOT_GI);
+			triac_leff_enable (TRIAC_GI_MASK);
+		}
+	}
+}
+
+void piano_jackpot_collected_gi_task (void)
+{
+	triac_leff_disable (TRIAC_GI_MASK);
+	task_sleep (TIME_1S + TIME_700MS);
+	triac_leff_enable (TRIAC_GI_MASK);
+	task_sleep (TIME_800MS);
+	triac_leff_disable (TRIAC_GI_MASK);
+	task_sleep (TIME_600MS);
+	triac_leff_enable (TRIAC_GI_MASK);
+	task_sleep (TIME_600MS);
+	triac_leff_disable (TRIAC_GI_MASK);
+	task_sleep (TIME_300MS);
+	triac_leff_enable (TRIAC_GI_MASK);
+	task_sleep (TIME_300MS);
+	triac_leff_disable (TRIAC_GI_MASK);
+	task_sleep (TIME_300MS);
+	triac_leff_enable (TRIAC_GI_MASK);
+	task_sleep (TIME_300MS);
+	triac_leff_disable (TRIAC_GI_MASK);
+	task_sleep (TIME_300MS);
+	triac_leff_enable (TRIAC_GI_MASK);
+	task_sleep (TIME_300MS);
+	triac_leff_disable (TRIAC_GI_MASK);
+	task_sleep (TIME_300MS);
+	triac_leff_enable (TRIAC_GI_MASK);
+	task_exit ();
+}
+
+void piano_jackpot_collected_leff (void)
+{
+	U8 i;
+	if (in_test)
+		sound_send (SND_JACKPOT_BACKGROUND);
+	
+	/* Start a timer so a switch closure within the first 2 seconds
+	 * doesn't kill the leff.  We do this so all balls have a chance to come
+	 * to a stop in the slot/autofire etc */
+	timer_restart_free (GID_GI_PF_SWITCH_TIMER, TIME_2S);
+	
+	lamplist_set_apply_delay (TIME_33MS);
+	leff_create_peer (piano_jackpot_collected_leff_task);
+	
+	/* Start the GI flash as a subtask as we may want to kill it before the main leff */
+	task_create_gid (GID_PIANO_JACKPOT_GI, piano_jackpot_collected_gi_task);
+	task_sleep (TIME_1S + TIME_700MS);
+	
+	lamplist_set_apply_delay (TIME_16MS);
+	leff_create_peer (piano_jackpot_collected_leff_task);
+	task_sleep (TIME_800MS);
+	
+	for (i = 0;i < 1; i++)
+	{
+		leff_create_peer (piano_jackpot_collected_leff_task);
+		task_sleep (TIME_600MS);
+	}
+	
+	leff_create_peer (piano_jackpot_collected_leff_flasher_task);
+	for (i = 0;i < 6; i++)
+	{
+		leff_create_peer (piano_jackpot_collected_leff_task);
+		task_sleep (TIME_300MS);
+	}	
 	leff_exit ();
 }
 
@@ -517,6 +630,36 @@ void flash_gi_leff (void)
 		task_sleep (TIME_100MS);
 		triac_leff_enable (TRIAC_GI_MASK);
 		task_sleep (TIME_100MS);
+	}
+	triac_leff_enable (TRIAC_GI_MASK);
+	leff_exit ();
+}
+
+void flash_gi2_leff (void)
+{
+	U8 i;
+	for (i = 1; i < 7; i++)
+	{
+		triac_leff_disable (TRIAC_GI_MASK);
+		task_sleep (TIME_100MS);
+		triac_leff_enable (TRIAC_GI_MASK);
+		task_sleep (TIME_100MS);
+	}
+	
+	for (i = 1; i < 7; i++)
+	{
+		triac_leff_disable (TRIAC_GI_MASK);
+		task_sleep (TIME_66MS);
+		triac_leff_enable (TRIAC_GI_MASK);
+		task_sleep (TIME_66MS);
+	}
+	
+	for (i = 1; i < 18; i++)
+	{
+		triac_leff_disable (TRIAC_GI_MASK);
+		task_sleep (TIME_33MS);
+		triac_leff_enable (TRIAC_GI_MASK);
+		task_sleep (TIME_33MS);
 	}
 	triac_leff_enable (TRIAC_GI_MASK);
 	leff_exit ();

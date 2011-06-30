@@ -113,13 +113,7 @@ void window_push_first (void)
 	 * later. */
 	sound_reset ();
 	task_sleep (TIME_100MS);
-
 	callset_invoke (test_start);
-
-	/* The test_start event causes diagnostics to run again; wait
-	before continuing until these finish. */
-	while (sys_init_pending_tasks)
-		task_sleep (TIME_100MS);
 }
 
 
@@ -163,6 +157,7 @@ void window_stop_thread (void)
 /** Redraws the current window. */
 void window_redraw (void)
 {
+	//TODO Don't redraw if running a deff test
 	dmd_alloc_pair ();
 	dmd_clean_page_low ();
 	window_call_op (win_top, draw);
@@ -559,6 +554,7 @@ struct audit earnings_audits[] = {
 struct audit standard_audits[] = {
 	{ "GAMES STARTED", AUDIT_TYPE_INT, &system_audits.games_started },
 	{ "TOTAL PLAYS", AUDIT_TYPE_INT, &system_audits.total_plays },
+	{ "MINUTES ON", AUDIT_TYPE_INT, &system_audits.minutes_on },
 	{ "TOTAL FREE PLAYS", AUDIT_TYPE_INT, &system_audits.total_free_plays },
 	{ STR_PERCENT "FREEPLAY", AUDIT_TYPE_GAME_PERCENT, &system_audits.total_free_plays },
 	{ "REPLAY AWARDS", AUDIT_TYPE_INT, &system_audits.replays },
@@ -1910,7 +1906,7 @@ struct menu irqload_test_item = {
 
 /**********************************************************************/
 
-#define SCORE_TEST_PLAYERS 4
+#define SCORE_TEST_PLAYERS MAX_PLAYERS
 
 const score_t score_test_increment = { 0x00, 0x01, 0x23, 0x45, 0x60 };
 
@@ -2928,6 +2924,9 @@ void sound_test_set_draw (void)
 	s = sprintf_buffer;
 #endif
 	font_render_string_center (&font_mono5, 64, 9, s);
+	/* Render the sound board version */
+	sound_version_render ();
+	font_render_string_center (&font_mono5, 64, 28, sprintf_buffer);
 }
 
 void sound_test_set_change (void)
@@ -3954,10 +3953,7 @@ CALLSET_ENTRY (test_mode, sw_right_button)
 
 CALLSET_ENTRY (test_mode, sw_enter)
 {
-	if (sys_init_pending_tasks != 0)
-	{
-	}
-	else if (!win_top)
+	if (!win_top)
 	{
 #ifdef MACHINE_TEST_ONLY
 		window_push (&menu_window, &test_menu);

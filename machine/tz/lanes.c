@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2010 by Ewan Meadows <sonny_jim@hotmail.com>
+ * Copyright 2011 by Ewan Meadows <sonny_jim@hotmail.com>
  *
  * This file is part of FreeWPC.
  *
@@ -20,11 +20,32 @@
 
 #include <freewpc.h>
 
-/* CALLSET_SECTION (lanes, __machine2__) */
+/* CALLSET_SECTION (lanes, __machine3__) */
 
 /* How many times the rollovers have been completed */
 U8 rollover_count;
 extern __local__ bool spiralaward_set_completed;
+extern __local__  U8 cameras_lit;
+
+void rollover_completed_deff (void)
+{
+	dmd_alloc_low_clean ();
+	if (rollover_count % 4 == 0)
+	{
+		font_render_string_center (&font_cowboy, 64, 8, "CAMERA");
+		font_render_string_center (&font_cowboy, 64, 18, "LIT");
+		sound_send (SND_CAMERA_PICTURE_EJECT_2);
+	}
+	else
+	{
+		font_render_string_center (&font_quadrit, 64, 8, "ROLLOVER");
+		font_render_string_center (&font_quadrit, 64, 18, "COMPLETED");
+		sound_send (SND_GLASS_BREAKS);
+	}
+	dmd_show_low ();
+	task_sleep_sec (1);
+	deff_exit ();
+}
 
 static void handle_outlane (void)
 {
@@ -37,7 +58,7 @@ static void handle_outlane (void)
 		leff_start (LEFF_STROBE_DOWN);
 }
 
-bool rollover_completed (void)
+static bool rollover_completed (void)
 {
 	if (lamp_test (LM_LEFT_INLANE1)
 		&& lamp_test (LM_LEFT_INLANE2)
@@ -47,13 +68,16 @@ bool rollover_completed (void)
 		return FALSE;
 }
 
-CALLSET_ENTRY (lanes, award_rollover_completed)
+static inline void award_rollover_completed (void)
 {
 	bounded_increment (rollover_count, 99);
 	score (SC_1M);
 	/* Hack as I can't be bothered to fix the sw_right_inlane on my table */	
 	if (!lamp_test (LM_DEAD_END))
 		lamp_on (LM_DEAD_END);
+	/* Increment cameras_lit every 4 rollovers */
+	if (rollover_count % 4 == 0)
+		bounded_increment (cameras_lit, 99);
 	/* Show animation */
 	deff_start (DEFF_ROLLOVER_COMPLETED);
 	/* Turn off inlane lamps */
@@ -63,14 +87,14 @@ CALLSET_ENTRY (lanes, award_rollover_completed)
 	lamplist_apply (LAMPLIST_INLANES, lamp_flash_off);
 }
 
-void check_rollover (void)
+static void check_rollover (void)
 {
 	/* Check to see if rollover has been completed 
 	 * and start the spiralaward timer if a set has been
 	 * completed */
 	if (rollover_completed () == TRUE)
 	{
-		callset_invoke (award_rollover_completed);
+		award_rollover_completed ();
 		if (spiralaward_set_completed == TRUE)
 			callset_invoke (start_spiralaward_timer);
 	}
@@ -92,6 +116,7 @@ CALLSET_ENTRY (lanes, sw_right_button)
 /* 'Extra Ball' outlane */
 CALLSET_ENTRY (lanes, sw_left_outlane)
 {
+	timer_restart_free (GID_BALL_DRAIN_OUTLANE, TIME_5S);
 	score (SC_10K);
 	handle_outlane ();
 }
@@ -99,6 +124,7 @@ CALLSET_ENTRY (lanes, sw_left_outlane)
 /* 'Special' outlane */
 CALLSET_ENTRY (lanes, sw_right_outlane)
 {
+	timer_restart_free (GID_BALL_DRAIN_OUTLANE, TIME_5S);
 	score (SC_10K);
 	handle_outlane ();
 }
@@ -142,10 +168,9 @@ CALLSET_ENTRY (lanes, sw_right_inlane)
 	
 	/* Light Dead end if not lit */
 	lamp_on (LM_DEAD_END);
-	/* Start the timer for the left ramp */
-	timer_restart_free (GID_LEFT_RAMP, TIME_3S);
+	timer_restart_free (GID_TNF_READY, TIME_4S);
+	//event_can_follow (right_inlane, left_ramp, TIME_4S);
 }
-
 
 CALLSET_ENTRY (lanes, start_ball)
 {
@@ -153,5 +178,3 @@ CALLSET_ENTRY (lanes, start_ball)
 	lamplist_apply (LAMPLIST_INLANES, lamp_off);
 	rollover_count = 0;
 }
-
-
