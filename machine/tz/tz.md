@@ -44,6 +44,8 @@ define CONFIG_TZONE_IP y
 # Allow only one high score entry per player
 #define CONFIG_ONE_HS_PER_PLAYER 
 
+define MACHINE_FADE_IN_GI
+
 #########################################################################
 # Lamp Description
 # The key is given in column/row format.  The first parameter must be
@@ -739,6 +741,9 @@ perlinclude machine/tz/leff.pl
 Bonus: runner, PRI_BONUS, LAMPS(ALL), GI(ALL), page(MACHINE2_PAGE)
 Select Mode: runner, PRI_LEFF7, LAMPS(SELECT_MODE), GI(ALL), page(MACHINE2_PAGE)
 GI Cycle: PRI_LEFF3, GI(ALL), page(MACHINE2_PAGE)
+GI Fade In: PRI_LEFF3, GI(ALL), page(MACHINE2_PAGE)
+GI Fade Out: PRI_LEFF3, GI(ALL), page(MACHINE2_PAGE)
+
 Flasher Happy: shared, PRI_LEFF1, page(MACHINE2_PAGE)
 Left Ramp: shared, PRI_LEFF2, page(MACHINE2_PAGE)
 No GI: PRI_LEFF1, GI(ALL), page(MACHINE2_PAGE)
@@ -753,9 +758,9 @@ Game Timeout: PRI_TILT, GI(ALL), page(MACHINE2_PAGE)
 Clock Start: PRI_LEFF4, GI(ALL), c_decl(clock_round_started_leff), page(MACHINE2_PAGE)
 MB Running: shared, PRI_LEFF2, LAMPS(DOOR_LOCKS_AND_GUMBALL), c_decl(multiball_running_leff), page(MACHINE2_PAGE)
 Strobe Up: PRI_LEFF2, LAMPS(ALL), , GI(ALL), page(MACHINE2_PAGE)
-Strobe Down: PRI_LEFF2, LAMPS(ALL), GI(ALL), page(MACHINE2_PAGE)
+Strobe Down: PRI_LEFF2, LAMPS(ALL), page(MACHINE2_PAGE)
 Multi Strobe: PRI_LEFF2, LAMPS(ALL), page(MACHINE2_PAGE)
-Door Strobe: PRI_LEFF3, LAMPS(DOOR_PANELS), GI(ALL), page(MACHINE2_PAGE)
+Door Strobe: PRI_LEFF3, LAMPS(DOOR_PANELS), page(MACHINE2_PAGE)
 Right Loop: PRI_LEFF1, LAMPS(SORT4), page(MACHINE2_PAGE)
 Left Loop: PRI_LEFF1, LAMPS(SORT3), page(MACHINE2_PAGE)
 Jets Active: shared, PRI_LEFF3, LAMPS(JETS), page(MACHINE2_PAGE)
@@ -764,7 +769,7 @@ Color Cycle: PRI_LEFF3, LAMPS(AMODE_ALL), GI(ALL), page(MACHINE2_PAGE)
 Lock: PRI_LEFF4, LAMPS(LOCK_TEST), page(MACHINE2_PAGE)
 MPF Active: shared, PRI_LEFF4, LAMPS(POWERFIELD_VALUES), page(MACHINE2_PAGE)
 MPF Hit: PRI_LEFF5, LAMPS(ALL), GI(ALL), page(MACHINE2_PAGE)
-Rocket: PRI_LEFF2, LAMPS(ALL), GI(ALL), page(MACHINE2_PAGE)
+Rocket: PRI_LEFF4, LAMPS(ALL), GI(ALL), page(MACHINE2_PAGE)
 Powerball Announce: PRI_LEFF4, LAMPS(ALL), GI(ALL), page(MACHINE2_PAGE)
 Amode: runner, PRI_LEFF1, LAMPS(AMODE_ALL), GI(ALL), page(MACHINE2_PAGE)
 Spiralaward: shared, PRI_LEFF5, LAMPS(SPIRAL_AWARDS), page(MACHINE2_PAGE)

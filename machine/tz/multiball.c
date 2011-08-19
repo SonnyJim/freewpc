@@ -164,11 +164,13 @@ CALLSET_ENTRY (mball_restart, mball_restart_stop)
 		timed_mode_end (&mball_restart_mode);
 }
 
-inline void mball_restart_start (void)
+static void mball_restart_start (void)
 {
 	timed_mode_begin (&mball_restart_mode);
 	struct lamptimer_args args = { .lamp = LM_LOCK_ARROW, .secs = 15 };
-	lamp_timer_start (&args);
+	if (!lamp_timer_find (LM_LOCK_ARROW))
+		lamp_timer_start (&args);
+	task_exit ();
 }
 
 /* Rules to say whether we can start multiball */
@@ -386,7 +388,7 @@ CALLSET_ENTRY (mball, lamp_update)
 	
 	/* Light the lock if it can be collected */
 	/* Don't light the lock if there's a restart running */
-	if (!timed_mode_running_p (&mball_restart_mode))
+	if (!lamp_timer_find (LM_LOCK_ARROW))
 	{
 		if (can_light_lock ())
 			lamp_tristate_flash (LM_LOCK_ARROW);
@@ -563,7 +565,7 @@ CALLSET_ENTRY (mball, mball_stop)
 		music_refresh ();
 		/* If a jackpot wasn't collected, offer a restart */
 		if (mball_jackpot_uncollected && !mball_restart_collected)
-			mball_restart_start ();
+			task_create_anon (mball_restart_start);
 	}
 }
 

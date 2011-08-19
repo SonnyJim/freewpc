@@ -20,6 +20,8 @@
 
 #include <freewpc.h>
 #include <bridge_open.h>
+#include <lamptimer.h>
+
 /** The number of balls enabled to go to the MPF */
 __local__ U8 mpf_enable_count;
 
@@ -334,7 +336,7 @@ CALLSET_ENTRY (mpf, end_ball)
 
 CALLSET_ENTRY (mpf, lamp_update)
 {
-	if (!task_find_gid (GID_USDSS_READY) && !task_find_gid (GID_USDSS_APPROACHING))
+	if (!lamp_timer_find (LM_RAMP_BATTLE))
 	{
 		if (mpf_ready_p ())
 			lamp_tristate_on (LM_RAMP_BATTLE);

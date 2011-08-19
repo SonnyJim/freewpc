@@ -364,6 +364,7 @@ void award_door_panel_task (void)
 	/* Start the event and show deff */
 	deff_start (DEFF_DOOR_AWARD);
 	leff_start (LEFF_DOOR_STROBE);
+	leff_start (LEFF_GI_FADE_IN);
 	door_start_event (door_index);
 	
 	score (SC_5M);

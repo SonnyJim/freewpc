@@ -133,9 +133,12 @@ CALLSET_ENTRY (spiralaward, start_spiralaward_timer)
 		 */
 		if (!global_flag_test (GLOBAL_FLAG_POWERBALL_IN_PLAY))
 			magnet_disable_catch (MAG_RIGHT);
-		struct lamptimer_args args = { .lamp = LM_RIGHT_SPIRAL, .secs = 3 };
-		lamp_timer_start (&args);
-		leff_start (LEFF_SPIRALAWARD);
+		if (!lamp_timer_find (LM_RIGHT_SPIRAL))
+		{
+			struct lamptimer_args args = { .lamp = LM_RIGHT_SPIRAL, .secs = 4 };
+			lamp_timer_start (&args);
+		}
+		//leff_start (LEFF_SPIRALAWARD);
 		/* Only show the hint the first two times */
 		if (spiralawards_collected < 1 && !spiralaward_set_completed);
 			deff_start (DEFF_SHOOT_RIGHT_LOOP);
@@ -146,9 +149,13 @@ CALLSET_ENTRY (spiralaward, start_spiralaward_timer)
 
 static void award_spiralaward (void)
 {	
-	lamp_timer_stop (LM_RIGHT_SPIRAL);
-	bounded_increment (spiralawards_collected, 6);
-	
+	extern struct timed_mode_ops spiral_mode;
+
+	if (!timed_mode_running_p (&spiral_mode))
+	{
+		lamp_timer_stop (LM_RIGHT_SPIRAL);
+		bounded_increment (spiralawards_collected, 6);
+	}
 	/* Pick a random award, random_scaled returns N-1 */
 	spiralaward = random_scaled (6);
 	/* Check to see if it's been previously awarded */

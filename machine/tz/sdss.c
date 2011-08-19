@@ -172,6 +172,7 @@ CALLSET_ENTRY (sdss, sw_left_inlane_2)
 	if (task_kill_gid (GID_USDSS_APPROACHING))
 	{
 		struct lamptimer_args args = { .lamp = LM_RAMP_BATTLE, .secs = 5 };
+		lamp_off (LM_RIGHT_SPIRAL);
 		lamp_timer_start (&args);
 		timer_restart_free (GID_USDSS_READY, TIME_5S);
 	}
@@ -325,7 +326,7 @@ CALLSET_ENTRY (sdss, start_player)
 	sdss_level = 0;
 }
 
-CALLSET_ENTRY (sdss, serve_ball)
+CALLSET_ENTRY (sdss, serve_ball, end_ball)
 {
 	sdss_disable ();
 }

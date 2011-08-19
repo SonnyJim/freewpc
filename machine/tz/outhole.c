@@ -67,6 +67,8 @@ CALLSET_ENTRY (outhole, sw_outhole)
 			powerball_death = TRUE;
 		deff_start (DEFF_BALL_EXPLODE);
 		leff_start (LEFF_STROBE_UP);
+		if (single_ball_play ())
+			leff_start (LEFF_GI_FADE_OUT);
 	}
 }
 

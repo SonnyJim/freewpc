@@ -26,6 +26,7 @@ extern bool mpf_active;
 extern U8 mpf_round_timer;
 extern U8 tsm_mode_timer;
 
+
 void bonus_leff (void)
 {
 	triac_leff_disable (TRIAC_GI_MASK);
@@ -40,6 +41,31 @@ void select_mode_leff (void)
 		task_sleep_sec (5);
 }
 
+void gi_fade_out_leff (void)
+{
+	triac_leff_enable (TRIAC_GI_MASK);
+	U8 i;
+	for (i = 8; i > 0 ; i--)
+	{
+		triac_leff_dim (TRIAC_GI_MASK, i);
+		task_sleep (TIME_66MS);
+	}
+	task_sleep_sec (1);
+	leff_exit ();
+}
+
+void gi_fade_in_leff (void)
+{
+	triac_leff_disable (TRIAC_GI_MASK);
+	task_sleep (TIME_400MS);
+	U8 i;
+	for (i = 0; i < 9; i++)
+	{
+		triac_leff_dim (TRIAC_GI_MASK, i);
+		task_sleep (TIME_200MS);
+	}
+	leff_exit ();
+}
 
 void gi_cycle_leff (void)
 {
@@ -125,7 +151,7 @@ void flash_all_leff (void)
 	leff_exit ();
 }
 
-static void slot_kickout_subtask (void)
+static void slot_kickout_flasher_subtask (void)
 {
 	U8 i;
 	for (i = 0; i < 5; i++)
@@ -136,15 +162,27 @@ static void slot_kickout_subtask (void)
 	task_exit ();
 }
 
+static void slot_kickout_gi_subtask (void)
+{
+	U8 i;
+	for (i = 0; i < 9; i++)
+	{
+		triac_leff_dim (TRIAC_GI_MASK, i);
+		task_sleep (TIME_66MS);
+	}
+	task_exit ();
+}
+
 void slot_kickout_leff (void)
 {
-	if (live_balls != 1)
+	if (single_ball_play ())
 	{
-		triac_leff_enable (TRIAC_GI_MASK);
+		leff_create_peer (slot_kickout_gi_subtask);
 	}
-	leff_create_peer (slot_kickout_subtask);
+	else
+		triac_leff_enable (TRIAC_GI_MASK);
+	leff_create_peer (slot_kickout_flasher_subtask);
 	task_sleep (TIME_500MS);
-	triac_leff_enable (TRIAC_GI_MASK);
 	leff_exit ();
 }
 
@@ -268,12 +306,29 @@ static void rocket_leff_subtask (void)
 		lamplist_apply (LAMPLIST_SORT4, leff_toggle);
 }
 
+static void rocket_leff_gi_subtask (void)
+{
+	triac_leff_enable (TRIAC_GI_MASK);
+	U8 i;
+	for (i = 8; i > 1; i--)
+	{
+		triac_leff_dim (TRIAC_GI_MASK, i);
+		task_sleep (TIME_16MS);
+	}
+	task_sleep (TIME_166MS);
+	triac_leff_enable (TRIAC_GI_MASK);
+	task_exit ();
+}
+
 void rocket_leff (void)
 {
 	U8 i;	
-	if (live_balls != 1)
+	
+	triac_leff_enable (TRIAC_GI_MASK);
+	
+	if (single_ball_play ())
 	{
-		triac_leff_enable (TRIAC_GI_MASK);
+		leff_create_peer (rocket_leff_gi_subtask);
 	}
 
 	for (i=0; i< 7; i++)
@@ -281,8 +336,7 @@ void rocket_leff (void)
 		flasher_pulse (FLASH_UR_FLIPPER);
 		task_sleep (TIME_66MS);
 	}
-	triac_leff_enable (TRIAC_GI_MASK);
-	lamplist_set_apply_delay (TIME_16MS);
+	lamplist_set_apply_delay (TIME_33MS);
 	leff_create_peer (rocket_leff_subtask);
 	task_sleep (TIME_66MS);
 	leff_create_peer (rocket_leff_subtask);
@@ -328,7 +382,6 @@ void door_strobe_subtask (void)
 
 void door_strobe_leff (void)
 {
-	triac_leff_disable (TRIAC_GI_MASK);
 	lamplist_apply (LAMPLIST_DOOR_PANELS, leff_off);
 	lamplist_set_apply_delay (TIME_33MS);
 	leff_create_peer (door_strobe_subtask);
@@ -336,7 +389,6 @@ void door_strobe_leff (void)
 	leff_create_peer (door_strobe_subtask);
 	task_sleep_sec (2);
 	task_kill_peers ();
-	triac_leff_enable (TRIAC_GI_MASK);
 	leff_exit ();
 }
 
