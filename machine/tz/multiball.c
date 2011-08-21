@@ -38,7 +38,6 @@ extern bool lock_powerball;
 extern struct timed_mode_ops mball_restart_mode;
 
 extern U8 unlit_shot_count;
-extern U8 live_balls;
 extern U8 gumball_enable_count;
 extern U8 autofire_request_count;
 extern bool fastlock_running (void);
@@ -465,7 +464,7 @@ void mball_check_light_lock (void)
 CALLSET_ENTRY (multiball, mball_start_3_ball)
 {
 	/* Don't start if another multiball is running */
-	if (multi_ball_play () || live_balls == 3)
+	if (multi_ball_play ())
 		return;
 	/* Check lock and empty accordingly */
 	switch (device_recount (device_entry (DEVNO_LOCK)))
@@ -495,7 +494,7 @@ CALLSET_ENTRY (multiball, mball_start_3_ball)
 
 CALLSET_ENTRY (multiball, mball_start_2_ball)
 {
-	if (multi_ball_play () || live_balls > 1)
+	if (multi_ball_play ())
 		return;
 	/* Check lock and empty accordingly */
 	switch (device_recount (device_entry (DEVNO_LOCK)))

@@ -630,7 +630,7 @@ void powerball_announce_leff (void)
 
 void mpf_active_leff (void)
 {
-	if (live_balls != 1)
+	if (!single_ball_play ())
 	{
 		triac_leff_enable (TRIAC_GI_MASK);
 	}

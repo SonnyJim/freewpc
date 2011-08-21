@@ -95,11 +95,10 @@ CALLSET_ENTRY (rocket, dev_rocket_kick_attempt)
 {
 	if (in_live_game)
 	{
+		leff_start (LEFF_ROCKET);
 		/* Small sleep to make sure skill code gets a chance to
 		 * execute */
 		task_sleep (TIME_33MS);
-		if (!multi_ball_play ())
-			leff_start (LEFF_ROCKET);
 		sound_send (SND_ROCKET_KICK_REVVING);
 		deff_start (DEFF_ROCKET);
 		task_sleep (TIME_400MS + TIME_33MS);

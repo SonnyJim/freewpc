@@ -125,6 +125,11 @@ void skill_shot_made_deff (void)
 	deff_exit ();
 }
 
+CALLSET_ENTRY (skill, valid_playfied)
+{
+	disable_skill_shot ();
+}
+
 /* Called from slot.c */
 CALLSET_ENTRY (skill, skill_missed)
 {
