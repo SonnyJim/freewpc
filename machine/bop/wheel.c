@@ -200,7 +200,7 @@ void wheel_deff (void)
 	score_zero (body_bonus_score);
 	score_add (body_bonus_score, score_table[SC_250K]);
 	score_mul (body_bonus_score, body_parts);
-	score (body_bonus_score);
+	score_long (body_bonus_score);
 
 
 	for (i = 1; i < body_parts; i++)

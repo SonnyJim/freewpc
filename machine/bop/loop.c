@@ -132,7 +132,7 @@ void award_loop (void)
 	if (timer_find_gid (GID_LOOP_COMBO))
 	//if (free_timer_test (timer_loop_combo))
 	{
-		bounded_increment (timer_loop_combo, 255);
+		bounded_increment (loop_combos, 255);
 		deff_start (DEFF_LOOP_COMBO);
 	}
 	else

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 by Ewan Meadows (sonny_jim@hotmail.com)
+ * Copyright 2013 by Ewan Meadows (sonny_jim@hotmail.com)
  *
  * This file is part of FreeWPC.
  *
@@ -19,19 +19,237 @@
  */
 
 
+/*
+   sw_face_position is closed on each face apart from the last face,
+   so to find home:
+
+   Turn the motor until we see a time delay between sw_face_position
+
+*/
+
 #include <freewpc.h>
 #include "wire_ball_lock.h"
+#include "head_motor.h"
+#include "head_motor_relay.h"
+
+U8 head_position;
+U8 head_mode;
+U8 head_ticks;
+
+#define HEAD_TIMEOUT 	(1000 * 20) / 100 // 20 Seconds
+#define HEAD_FACE_TIMEOUT (1000 * 4) / 100 // 4 Seconds
+
+typedef enum { 
+	HEAD_INIT, 
+	HEAD_CALIBRATED, 
+	HEAD_CALIBRATING 
+} head_mode_t;
+
+typedef enum { 
+	FACE_1, 
+	FACE_2, 
+	FACE_3, 
+	FACE_4, 
+	FACE_LOST 
+} head_position_t;
+
+void calibrating_head_deff (void)
+{
+	while (head_mode == (HEAD_CALIBRATING))
+	{
+		seg_alloc_clean ();
+		if (switch_poll_logical (SW_FACE_POSITION))
+			seg_write_row_center (0, "SWITCH CLOSED");
+		else
+			seg_write_row_center (0, "CALIBRATING HEAD");
+		sprintf ("%d TICKS F%d M%d", head_ticks, head_position, head_mode);
+		seg_write_row_center (1, sprintf_buffer);
+		seg_show ();
+		task_sleep (TIME_100MS);
+	}
+	deff_exit ();
+}
+
+static void head_stop (void)
+{	
+	head_motor_stop ();
+	head_motor_relay_stop ();
+	task_kill_gid (GID_HEAD_TURN_LEFT);
+	task_kill_gid (GID_HEAD_CALIBRATING);
+	task_kill_gid (GID_HEAD_TURN_RIGHT);
+}
+
+static void head_turn_left_task (void)
+{
+	for (head_ticks = 0; head_ticks < HEAD_TIMEOUT; head_ticks++)
+	{
+		head_motor_start ();
+		if (head_position == FACE_1 && head_ticks > 30 && head_mode != HEAD_CALIBRATING)
+		{
+			head_ticks = 0;
+			head_position = FACE_4;
+		}
+		task_sleep (TIME_100MS);
+	}
+
+	//Task should of been killed by now
+	global_flag_on (GLOBAL_FLAG_HEAD_BROKEN);
+	head_stop ();
+	task_exit ();
+}
+
+static void head_turn_right_task (void)
+{
+	for (head_ticks = 0; head_ticks < HEAD_TIMEOUT; head_ticks++)
+	{
+		head_motor_start ();
+		
+		if (head_position == FACE_3 && head_ticks > 30 && head_mode != HEAD_CALIBRATING)
+		{
+			head_ticks = 0;
+			head_position = FACE_4;
+		}
+		task_sleep (TIME_100MS);
+	}
+
+	//Task should of been killed by now
+	global_flag_on (GLOBAL_FLAG_HEAD_BROKEN);
+	head_stop ();
+	task_exit ();
+}
+
+static void head_turn_left (void)
+{
+	head_motor_relay_start ();
+	if (head_mode == HEAD_CALIBRATED && !global_flag_test (GLOBAL_FLAG_HEAD_BROKEN))
+	{
+		while (task_find_gid (GID_HEAD_TURN_LEFT) || task_find_gid (GID_HEAD_TURN_RIGHT))
+			task_sleep (TIME_500MS);
+
+		task_create_gid (GID_HEAD_TURN_LEFT, head_turn_left_task);
+	}
+
+}
+
+static void head_turn_right (void)
+{
+	if (head_mode == HEAD_CALIBRATED && !global_flag_test (GLOBAL_FLAG_HEAD_BROKEN))
+	{
+		//Turning right should always have priority
+		while (task_find_gid (GID_HEAD_TURN_LEFT) || task_find_gid (GID_HEAD_TURN_RIGHT))
+			task_sleep (TIME_300MS);
+
+		task_create_gid (GID_HEAD_TURN_RIGHT, head_turn_right_task);
+	}
+
+}
+
+
+void head_calibrate (void)
+{
+	head_mode = HEAD_CALIBRATING;
+	head_position = FACE_LOST;
+	global_flag_on (GLOBAL_FLAG_HEAD_BROKEN);
+	deff_start (DEFF_CALIBRATING_HEAD);
+	task_create_gid (GID_HEAD_CALIBRATING, head_turn_right_task);
+
+	while (task_find_gid (GID_HEAD_CALIBRATING) && head_position == FACE_LOST)
+	{
+		task_sleep_sec (1);
+	}
+	
+	if (head_position == FACE_1)
+	{
+		global_flag_off (GLOBAL_FLAG_HEAD_BROKEN);
+		head_mode = HEAD_CALIBRATED;
+	}
+}
+
+CALLSET_ENTRY (head, init)
+{
+	head_ticks = 0;
+	head_mode = HEAD_INIT;
+	//TODO Option to not calibrate head on each powerup
+}
+
+CALLSET_ENTRY (head, init_complete)
+{
+	head_calibrate ();
+}
+
+CALLSET_ENTRY (head, sw_face_position)
+{
+	if (head_mode == HEAD_CALIBRATING)
+	{
+		if (head_ticks > HEAD_FACE_TIMEOUT)
+		{
+			head_stop ();
+			head_position = FACE_1;
+		}
+	}
+	else if (head_mode == HEAD_CALIBRATED)
+	{
+		if (task_find_gid (GID_HEAD_TURN_RIGHT))
+		{
+			//Head has turned the other way
+			head_stop ();
+			
+			if (head_position == FACE_1)
+				head_position = FACE_4;
+			else
+				head_position--;
+		}
+		else
+		{
+			head_stop ();
+			if (head_position == FACE_4)
+				head_position = FACE_1;
+			else
+				head_position++;
+		}
+	}
+	head_ticks = 0;
+}
+
+CALLSET_ENTRY (head, sw_enter_head)
+{
+
+}
+
+CALLSET_ENTRY (head, sw_left_eye)
+{
+	if (head_position != FACE_3)
+	{
+		head_position = FACE_LOST;
+		global_flag_on (GLOBAL_FLAG_HEAD_BROKEN);
+	}
+	sol_request (SOL_LEFT_EYE);
+}
+
+CALLSET_ENTRY (head, sw_right_eye)
+{
+	if (head_position != FACE_3)
+	{
+		head_position = FACE_LOST;
+		global_flag_on (GLOBAL_FLAG_HEAD_BROKEN);
+	}
+	sol_request (SOL_RIGHT_EYE);
+}
 
 CALLSET_ENTRY (head, sw_mouth)
 {
+	if (head_position != FACE_2)
+	{
+		head_position = FACE_LOST;
+		global_flag_on (GLOBAL_FLAG_HEAD_BROKEN);
+	}
+	//TODO Check if we actually want to start the deff if head is lost
+	else if (in_game)
+	{
+		deff_start (DEFF_I_CAN_SPEAK);
+		task_sleep_sec (4);
+		timer_restart_free (GID_MOUTH_TO_WIREFORM, TIME_2S);
+	}
+	
 	sol_request (SOL_MOUTH);
-	task_sleep_sec (1);
-}
-
-CALLSET_ENTRY (head, sw_wireform_bottom)
-{
-	//TODO Detect when the wireball lock switch changes state so we can count the balls leaving.
-	wire_ball_lock_start ();
-	task_sleep_sec (1);
-	wire_ball_lock_stop ();
 }

@@ -36,21 +36,14 @@ sound_code_t jet_sounds[5][3] = {
 free_timer_id_t timer_jets_level_up;
 score_t total_jets_score;
 
-const score_id_t jets_level_up_scores[] =  { SC_100K, SC_200K, SC_300K, SC_500K, SC_1M };
-
-//const score_id_t jets_level_up_score_table[] = { SC_100K, SC_200K, SC_300K, SC_500K, SC_1M };
+const score_id_t jets_level_up_scores[] =  {
+	SC_100K, SC_200K, SC_300K, SC_500K, SC_1M 
+};
 
 /* How much each jet scores per level */
 const score_id_t jets_hit_scores[] = {
 	SC_1K, SC_10K, SC_25K, SC_50K, SC_100K
 };
-
-const struct generic_ladder jets_level_up_score_rule = {
-	5,
-	jets_hit_scores,
-	&jets_level,
-};
-
 
 const char jets_hit_text[][4] = {
 	"1K", "10K", "25K", "50K", "100K"
@@ -65,9 +58,10 @@ void jet_hit_deff (void)
 	seg_alloc_clean ();
 	if (free_timer_test (timer_jets_level_up))
 	{
-		sprintf ("JETS NOW WORTH", jets_level);
+		sound_send (SND_WHOOSH_UP_1);
+		sprintf ("JETS NOW", jets_level);
 		seg_write_row_center (0, sprintf_buffer);
-		sprintf ("%s EACH HIT", jets_hit_text[jets_level]);
+		sprintf ("%s", jets_hit_text[jets_level]);
 		seg_write_row_center (1, sprintf_buffer);
 	}
 	else
@@ -95,14 +89,15 @@ CALLSET_ENTRY (jets, jet_hit)
 		jets_sound_index = 0;
 
 	/* Score the hit, based on level */	
-	generic_ladder_score (&jets_level_up_score_rule);
 	score_add (total_jets_score, score_table[jets_hit_scores[jets_level]]);
+	score_long (score_table[jets_hit_scores[jets_level]]);
 	bounded_increment (jets_hit, 255);
 
 	/* Level up if needed */
 	if (jets_hit >= jets_needed[jets_level])
 	{
-		generic_ladder_score_and_advance (&jets_level_up_score_rule);
+		bounded_increment (jets_level, 4);
+		score_long (score_table[jets_level_up_scores[jets_level]]);
 		jets_hit = 0;
 		free_timer_restart (timer_jets_level_up, TIME_2S);
 	}
@@ -119,7 +114,6 @@ CALLSET_ENTRY (jets, start_player)
 
 CALLSET_ENTRY (jets, start_ball)
 {
-	generic_ladder_reset (&jets_level_up_score_rule);	
 	jets_sound_index = 0;
 	jets_hit = 0;
 	score_zero (total_jets_score);

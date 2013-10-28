@@ -55,7 +55,7 @@ GAME_OBJS =
 
 GAME_PAGED_OBJS = leffs.o skill.o outhole.o jets.o head.o \
 		lanes.o loop.o rightramp.o leftramp.o spinner.o config.o \
-		shots.o standups.o wheel.o bonus.o
+		shots.o standups.o wheel.o bonus.o deffs.o
 
 GAME_INCLUDES =
 
