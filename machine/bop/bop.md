@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------
 # Machine description for The Machine: Bride of Pinbot
-# (C) Copyright 2007, 2009, 2010 by Brian Dominy <brian@oddchange.com>
+# (C) Copyright 2007, 2009, 2010, 2011 by Brian Dominy <brian@oddchange.com>
 #
 # See tools/genmachine for more information about the format of this file.
 #--------------------------------------------------------------------------
@@ -30,10 +30,9 @@ include platform/wpc/wpc89.md
 #define MACHINE_MUSIC_PLUNGER
 #define MACHINE_REPLAY_SCORE_CHOICES       10
 #define MACHINE_REPLAY_START_CHOICE        5
-#define MACHINE_REPLAY_CODE_TO_SCORE       replay_code_to_score
-#define MACHINE_DEBUGGER_HOOK
-#define MACHINE_OUTHOLE_KICK_HOOK
-define MACHINE_BALL_SAVE_TIME             0
+#define MACHINE_BALL_SAVE_TIME             5
+#define MACHINE_ONE_BALL_SAVE
+define MACHINE_MAX_BALLS                  3
 
 #define MACHINE_CUSTOM_AMODE
 define MACHINE_GRAND_CHAMPION_INITIALS { 'L', 'E', 'D' }
@@ -90,9 +89,9 @@ define MACHINE_HIGH_SCORES { 0x00, 0x10, 0x00, 0x00, 0x00 }, { 0x00, 0x09, 0x00,
 56: Right Loop 100K
 57: Right Loop 50K
 58: Right Loop 25K
-61: Centre Ramp 100K
-62: Centre Ramp 500K
-63: Centre Ramp 1M
+61: Right Ramp 100K
+62: Right Ramp 500K
+63: Right Ramp 1M
 64: Wire ball lock
 65: Jet 500K
 66: Jet 100K
@@ -122,7 +121,7 @@ define MACHINE_HIGH_SCORES { 0x00, 0x10, 0x00, 0x00, 0x00 }, { 0x00, 0x09, 0x00,
 # name.  Options can be given in any order:
 #    ingame - only service the switch during a game
 #    intest - also service the switch in test mode
-#    noplay - tripping this switch does NOT mark ball in play
+#    novalid - tripping this switch does NOT mark ball in play
 #    standup - this is a standup
 #    button - this is a button
 #    edge - this switch should be serviced on either transition
@@ -142,33 +141,33 @@ define MACHINE_HIGH_SCORES { 0x00, 0x10, 0x00, 0x00, 0x00 }, { 0x00, 0x09, 0x00,
 11: Right Flipper, button, intest, c_decl(sw_right_button)
 12: Left Flipper, button, intest, c_decl(sw_left_button)
 13: Start Button, start-button, intest
-14: Plumb bob tilt, c_decl(sw_tilt), cabinet, tilt, ingame, noplay
-15: Left Outlane
-16: Left Inlane
-17: Right Inlane
-18: Right Outlane
+14: Plumb bob tilt, c_decl(sw_tilt), cabinet, tilt, ingame, novalid
+15: Left Outlane, ingame
+16: Left Inlane, ingame
+17: Right Inlane, ingame
+18: Right Outlane, ingame
 21: Slam Tilt, slam-tilt, ingame, cabinet
-23: Ticket Opto, cabinet, opto, noplay
-25: Trough Right, noscore
-26: Trough Center, noscore
-27: Trough Left, noscore
+23: Ticket Opto, cabinet, opto, novalid
+25: Trough Right, noscore, edge, trough
+26: Trough Center, noscore, edge, trough
+27: Trough Left, noscore, edge, trough
 28: Left Standup, standup
-31: Skill Shot 50K
-32: Skill Shot 75K
-33: Skill Shot 100K
-34: Skill Shot 200K
-35: Skill Shot 25K
-36: Right Top Standup, standup
-37: Right Bottom Standup, standup
-38: Outhole, outhole, noscore
-41: Centre Ramp Made
-43: Left Loop, ingame
+31: Skill Shot 50K, ingame
+32: Skill Shot 75K, ingame
+33: Skill Shot 100K, ingame
+34: Skill Shot 200K, ingame
+35: Skill Shot 25K, ingame
+36: Right Top Standup, standup ingame
+37: Right Bottom Standup, standup, ingame
+38: Outhole, outhole, noscore, novalid
+41: Right Ramp Made, ingame
+43: Left Loop, ingame,
 44: Right Loop Top, ingame
 45: Right Loop Bottom, ingame
-46: Under Playfield Kickback
+46: Under Playfield Kickback, edge
 47: Enter Head
 51: Spinner, ingame
-52: Shooter, shooter, debounce(TIME_200MS)
+52: Shooter, shooter, edge, novalid, debounce(TIME_200MS)
 53: UR Jet, ingame, c_decl(jet_hit)
 54: UL Jet, ingame, c_decl(jet_hit)
 55: Lower Jet, ingame, c_decl(jet_hit)
@@ -185,7 +184,7 @@ define MACHINE_HIGH_SCORES { 0x00, 0x10, 0x00, 0x00, 0x00 }, { 0x00, 0x09, 0x00,
 74: MPF Exit Left
 75: MPF Exit Right
 76: Left Ramp Enter
-77: Centre Ramp Enter
+77: Right Ramp Enter
 
 ##########################################################################
 # Drives
@@ -210,7 +209,7 @@ H2: Trough Release, ballserve
 H3: UPF Kicker
 H4: MPF Gate
 H5: SShot Kicker
-H6: Wire Post
+H6: Wire Ball Lock, duty(SOL_DUTY_25), time(TIME_100MS)
 H7: Knocker, knocker
 H8: Mouth, nosearch
 
@@ -277,16 +276,18 @@ Playfield: PF:all
 Lanes: Left Outlane..Right Outlane
 Left loops: Left Loop 500K..Left Loop 25K
 Right loops: Right Loop 500K..Right Loop 25K
-Skillshot: Skill Shot 50K..Skill Shot 25K
+Skill Shot: Skill Shot 50K..Skill Shot 25K
+Little Wheel: SW Lite Jackpot, SW Lite Extra Ball, SW 50K, SW 100K, SW 250K
+Big Wheel: BW Lite Billion, BW Extra Ball, BW 10M, BW 50M, BW Special, BW 5M, BW 1M
 
 [containers]
-Trough: trough, Trough Release, Trough Right, Trough Center, Trough Left, init_max_count(2)
+Trough: Trough Release, trough, Trough Left, Trough Center, Trough Right, init_max_count(3)
 
-Head: Wire Post, init_max_count(0), Enter Head, Wireform Top, Wireform Bottom
+Head: Wire Ball Lock, init_max_count(0), Enter Head, Wireform Top, Wireform Bottom
 
 UPFKicker: UPF Kicker, init_max_count(0), Under Playfield Kickback
 
-SShotKicker: SShot Kicker, init_max_count(0), Skill Shot 50K
+#SShotKicker: SShot Kicker, init_max_count(0), Skill Shot 50K, Skill Shot 75K, Skill Shot 100K, Skill Shot 200K, Skill Shot 25K
 
 #------------------------------------------------------------------------
 # The remaining sections describe software aspects, and not the physical
@@ -352,19 +353,50 @@ Volume Change: MUS_SECRET_FANFARE
 # Bit flags.
 ##########################################################################
 [flags]
-Skillshot enabled:
+Skill shot enabled:
+
+Jackpot Lit:
+EB Lit:
+50K Skill Shot:
+100K Skill Shot:
+250K Jets:
+SW Completed:
+
+Billion Lit:
+EB Collected:
+10M Total:
+50M Total:
+Special Lit:
+1M Jets:
+BW Completed:
+
+
+50K SS Made:
+75K SS Made:
+100K SS Made:
+200K SS Made:
+25K SS Made:
+Skill missed:
 
 ##########################################################################
 # Display effects
+# The higher the value, the greater the priority it has
 ##########################################################################
 [deffs]
-Skillshot: page(MACHINE_PAGE), PRI_GAME_QUICK6, D_QUEUED+D_PAUSE+D_SCORE
+Skill Shot: page(MACHINE_PAGE), PRI_GAME_QUICK6, D_QUEUED+D_PAUSE
+Skill Missed: page(MACHINE_PAGE), PRI_GAME_QUICK6, D_QUEUED+D_PAUSE
 Jet Hit: page(MACHINE_PAGE), PRI_GAME_QUICK2, D_RESTARTABLE
-Jets Level Up: page(MACHINE_PAGE), PRI_GAME_MODE3, D_QUEUED
+#Jets Level Up: page(MACHINE_PAGE), PRI_GAME_MODE3, D_QUEUED
+Standup Multiplier: page(MACHINE_PAGE), PRI_GAME_MODE4, D_QUEUED
 Loop: page(MACHINE_PAGE), PRI_GAME_QUICK4, D_RESTARTABLE+D_SCORE
-Centre Ramp: page(MACHINE_PAGE), PRI_GAME_QUICK5, D_RESTARTABLE
+Loop combo: page(MACHINE_PAGE), PRI_GAME_QUICK4, D_RESTARTABLE+D_SCORE
+Right Ramp: page(MACHINE_PAGE), PRI_GAME_QUICK5, D_RESTARTABLE
+Right Ramp combo: page(MACHINE_PAGE), PRI_GAME_QUICK5, D_RESTARTABLE
 Shuttle Launch: page(MACHINE_PAGE), PRI_GAME_QUICK5, D_RESTARTABLE
+Abort Launch: page(MACHINE_PAGE), PRI_GAME_QUICK6, D_RESTARTABLE
 Rollover Completed: page(MACHINE_PAGE), PRI_GAME_QUICK2, D_RESTARTABLE
+Wheel: page(MACHINE_PAGE), PRI_GAME_MODE3, D_QUEUED+D_PAUSE
+Bonus: page(MACHINE_PAGE), PRI_BONUS
 
 ##########################################################################
 # Lamp effects
@@ -373,9 +405,7 @@ Rollover Completed: page(MACHINE_PAGE), PRI_GAME_QUICK2, D_RESTARTABLE
 Amode: runner, PRI_LEFF1, LAMPS(PLAYFIELD), GI(ALL), page(MACHINE_PAGE)
 #Circle Out: PRI_LEFF3, LAMPS(CIRCLE_OUT), page(MACHINE_PAGE)
 #Shooter: PRI_LEFF2, page(MACHINE_PAGE)
-#Skillshot: PRI_LEFF2, page(MACHINE_PAGE), LAMPS(SKILLSHOT)
-
-[timers]
+Skill Strobe: page(MACHINE_PAGE), PRI_LEFF3, LAMPS(SKILL_SHOT)
 
 [templates]
 
@@ -391,9 +421,21 @@ UR Jet: driver(spsol), sw=SW_UR_JET, sol=SOL_UR_JET, ontime=4, offtime=20
 
 Lower Jet: driver(spsol), sw=SW_LOWER_JET, sol=SOL_LOWER_JET, ontime=4, offtime=20
 
-Spinner: driver(spinner), sw_event=sw_spinner, sw_number=SW_SPINNER
+#TODO Doesnt seem to trigger sw_spinner_low
+#Spinner: driver(spinner), sw_event=sw_spinner, sw_number=SW_SPINNER
 
 Gate: driver(duty), sol=SOL_MPF_GATE, ontime=TIME_300MS, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=60
 
 Head Motor: driver(duty), sol=SOL_HEAD_MOTOR, ontime=0, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=20
 Head Motor Relay: driver(duty), sol=SOL_HEAD_MOTOR_RELAY, ontime=0, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=20
+
+Outhole: driver(outhole), sol=SOL_OUTHOLE, swno=SW_OUTHOLE, swevent=sw_outhole
+
+Wire Ball Lock: driver(duty), sol=SOL_WIRE_BALL_LOCK, ontime=TIME_300MS, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=1
+
+[system_sounds]
+Add Coin: SND_COIN
+Add Credit: SND_THANK_YOU
+Start Game: SND_STANDBY
+Tilt Warning: SND_TILT_WARNING
+Tlt: SND_TILT

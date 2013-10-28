@@ -18,6 +18,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#define ROLLOVER_FOR_LEVEL 3
 #include <freewpc.h>
 
 /* How many times the rollovers have been completed */
@@ -26,8 +27,20 @@ U8 rollover_count;
 void rollover_completed_deff (void)
 {
 	seg_alloc_clean ();
-	psprintf ("1 ROLLOVER", "%d ROLLOVERS", rollover_count);
-	seg_write_row_center (0, sprintf_buffer);
+	if (timer_find_gid (GID_ROLLOVER_LEVEL_UP))
+	{
+		sprintf ("5 ROLLOVERS");
+		seg_write_row_center (0, sprintf_buffer);
+		sprintf ("EXTRA BALL LIT"); 
+		seg_write_row_center (1, sprintf_buffer);
+	}
+	else
+	{
+		psprintf ("1 ROLLOVER", "%d ROLLOVERS", rollover_count);
+		seg_write_row_center (0, sprintf_buffer);
+		sprintf ("%s FOR EB LIT", ROLLOVER_FOR_LEVEL - rollover_count); 
+		seg_write_row_center (1, sprintf_buffer);
+	}
 	seg_show ();
 	task_sleep_sec (2);
 	deff_exit ();
@@ -55,14 +68,8 @@ static bool rollover_completed (void)
 	else
 		return FALSE;
 }
-
-static void award_rollover_completed (void)
+static void flash_lanes_task (void)
 {
-	bounded_increment (rollover_count, 99);
-	score (SC_1M);
-	
-	/* Show animation */
-	deff_start (DEFF_ROLLOVER_COMPLETED);
 	/* Flash and turn off inlane lamps */
 	lamplist_apply (LAMPLIST_LANES, lamp_off);
 	lamplist_apply (LAMPLIST_LANES, lamp_flash_on);
@@ -70,15 +77,57 @@ static void award_rollover_completed (void)
 	lamplist_apply (LAMPLIST_LANES, lamp_flash_off);
 }
 
+static void award_rollover_completed (void)
+{
+	bounded_increment (rollover_count, 99);
+	score (SC_250K);
+	
+	task_recreate_gid (GID_FLASH_LANES, flash_lanes_task);
+	/* Show animation */
+	if (rollover_count == ROLLOVER_FOR_LEVEL)
+	{
+		timer_restart_free (GID_ROLLOVER_LEVEL_UP, TIME_2S);
+		callset_invoke (wheel_award_eb_lit);
+		rollover_count = 1;
+	}
+	deff_start (DEFF_ROLLOVER_COMPLETED);
+
+}
+
 static void check_rollover (void)
 {
-	/* Check to see if rollover has been completed 
-	 * and start the spiralaward timer if a set has been
-	 * completed */
+	sound_send (SND_POWER_UP5_1);
 	if (rollover_completed () == TRUE)
 	{
 		award_rollover_completed ();
 	}
+}
+
+static void light_unlit_lane (void)
+{
+	U8 n;
+
+	for (n = 0; n < 4; n++)
+	{
+		if (lamp_test (lamplist_index(LAMPLIST_LANES, n)) == 0)
+		{
+			lamp_on (lamplist_index(LAMPLIST_LANES, n));
+			check_rollover ();
+			n = 5;
+		}
+	}
+}
+
+static void check_rollover_task (void)
+{
+	check_rollover ();
+	task_exit ();
+}
+
+CALLSET_ENTRY (lanes, light_lane)
+{
+	light_unlit_lane ();
+	task_create_gid (GID_LIGHT_LANE, check_rollover_task);
 }
 
 /* Flipper button handlers */

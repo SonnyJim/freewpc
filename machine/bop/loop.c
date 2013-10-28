@@ -32,8 +32,11 @@ U8 last_left_loop_level;
 U8 last_right_loop_level;
 
 U8 total_loops;
+U8 loop_combos;
 
-score_t loop_score_table[] = {
+free_timer_id_t timer_loop_combo;
+
+score_id_t loop_score_table[] = {
 	SC_25K, SC_50K, SC_100K, SC_500K
 };
 
@@ -44,6 +47,41 @@ lampnum_t left_loop_lamps[] = {
 lampnum_t right_loop_lamps[] = {
 	LM_RIGHT_LOOP_25K, LM_RIGHT_LOOP_50K, LM_RIGHT_LOOP_100K, LM_RIGHT_LOOP_500K
 };
+
+void left_loop_flasher_task (void)
+{
+	U8 n;
+	for (n = 0; n < 6; n++)
+	{
+		flasher_pulse (FLASH_LEFT_LOOP);
+		task_sleep (TIME_166MS);
+	}
+	task_exit ();
+}
+
+void right_loop_flasher_task (void)
+{
+	U8 n;
+	for (n = 0; n < 6; n++)
+	{
+		flasher_pulse (FLASH_SKILL_SHOT);
+		task_sleep (TIME_166MS);
+	}
+	task_exit ();
+}
+
+void loop_combo_deff (void)
+{
+	seg_alloc_clean ();
+	psprintf ("1 LOOP COMBO", "%d LOOP COMBOS", loop_combos);
+	seg_write_row_center (0, sprintf_buffer);
+	sprintf_score (score_deff_get ());
+	seg_write_row_center (1, sprintf_buffer);
+	seg_show ();
+	task_sleep_sec (2);
+	deff_exit ();
+}
+
 
 void loop_deff (void)
 {
@@ -88,64 +126,51 @@ static void loop_level_timer_task (void)
 	task_exit ();
 }
 
-static void award_loop (void)
+void award_loop (void)
 {
+	bounded_increment (total_loops, 255);
+	if (timer_find_gid (GID_LOOP_COMBO))
+	//if (free_timer_test (timer_loop_combo))
+	{
+		bounded_increment (timer_loop_combo, 255);
+		deff_start (DEFF_LOOP_COMBO);
+	}
+	else
+	{
+		deff_start (DEFF_LOOP);
+	}
+	
+	timer_restart_free (GID_LOOP_COMBO, TIME_4S);
+	//free_timer_restart (timer_loop_combo, TIME_4S);
 	/* Start a timer to go down a level after 10 seconds */
 	if (!task_find_gid (GID_LOOP_LEVEL_TIMER))
 		task_create_gid (GID_LOOP_LEVEL_TIMER, loop_level_timer_task);
 	
-	bounded_increment (total_loops, 254);
-	deff_start (DEFF_LOOP);	
-}
-
-static void award_left_loop (void)
-{
-	/* This causes a compiler warning as I don't think it 
-	 * knows about bounded_increment when checking for
-	 * array bounds */
-	bounded_increment (left_loop_level, NUM_LOOP_LEVELS - 1);
-	/* Reset the loop level timer */
-	left_loop_level = LOOP_LEVEL_DELAY;
-	score (loop_score_table[left_loop_level]);
-	award_loop ();
-}
-
-static void award_right_loop (void)
-{
-	bounded_increment (right_loop_level, NUM_LOOP_LEVELS - 1);
-	right_loop_level = LOOP_LEVEL_DELAY;
-	score (loop_score_table[right_loop_level]);
-	award_loop ();
 }
 
 CALLSET_ENTRY (loop, sw_left_loop)
 {
-	award_left_loop ();
+	
+	/* This causes a compiler warning as I don't think it 
+	 * knows about bounded_increment when checking for
+	 * array bounds */
+	sound_send (SND_POWER_UP4_1);
+	/* Reset the loop level timer */
+	left_loop_timer = LOOP_LEVEL_DELAY;
+	score (loop_score_table[left_loop_level]);
+	bounded_increment (left_loop_level, NUM_LOOP_LEVELS - 1);
+	task_recreate_gid (GID_LEFT_LOOP_FLASHER, left_loop_flasher_task);
+	award_loop ();
 }
 
-CALLSET_ENTRY (loop, sw_right_loop_top)
+CALLSET_ENTRY (loop, right_loop_completed)
 {
-	if (event_did_follow (right_loop_bottom, right_loop_top))
-	{
-		/* Ball came in from the bottom 
-		 * score differently? */
-		award_right_loop ();
-	}
-	event_should_follow (right_loop_top, right_loop_bottom, TIME_2S);
-}
-
-CALLSET_ENTRY (loop, sw_right_loop_bottom)
-{
-	if (event_did_follow (right_loop_top, right_loop_bottom))
-	{
-		award_right_loop ();
-	}
-	else if (event_did_follow (right_loop_bottom, right_loop_bottom))
-	{
-		/* Ball came out the bottom, no loop */
-	}
-	event_should_follow (right_loop_bottom, right_loop_top, TIME_2S);
-	event_can_follow (right_loop_bottom, right_loop_bottom, TIME_2S);
+	sound_send (SND_WOW);
+	right_loop_timer = LOOP_LEVEL_DELAY;
+	score (loop_score_table[right_loop_level]);
+	bounded_increment (right_loop_level, NUM_LOOP_LEVELS - 1);
+	task_recreate_gid (GID_SKILL_SHOT_FLASHER, right_loop_flasher_task);
+	award_loop ();
 }
 
 void light_left_loop_lamps (void)

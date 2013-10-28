@@ -20,23 +20,23 @@
 
 
 #include <freewpc.h>
-#include <gate.h>
 
-CALLSET_ENTRY (leftramp, sw_enter_mpf)
+//sound_code_t spinner_sounds[] = {
+//	SND_SPINNER1, SND_SPINNER2, SND_SPINNER3, SND_SPINNER3
+//};
+
+score_t spinner_total;
+
+CALLSET_ENTRY (bop_spinner, sw_spinner)
 {
-	gate_stop ();
-	sound_send (MUS_MPF_ENTER);
+	if (!task_find_gid (GID_FLASH_JETS_ENTER))
+		flasher_pulse (FLASH_JETS_ENTER);
+	score (SC_1K);
+	score_add (spinner_total, score_table[SC_1K]);
+	sound_send (SND_SPINNER1 + random_scaled (3));
 }
 
-CALLSET_ENTRY (leftramp, sw_mpf_exit_left)
+CALLSET_ENTRY (bop_spinner, start_ball)
 {
-	sound_send (SND_MPF_EXIT);
-	event_should_follow (mpf_exit, right_inlane, TIME_4S);
-}
-
-CALLSET_ENTRY (leftramp, sw_mpf_exit_right)
-{
-	sound_send (SND_MPF_EXIT);
-	flag_on (FLAG_SKILLSHOT_ENABLED);
-	event_should_follow (mpf_exit, shooter, TIME_4S);
+	score_zero (spinner_total);
 }

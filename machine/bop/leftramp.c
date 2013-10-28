@@ -32,24 +32,57 @@ void shuttle_launch_deff (void)
 	deff_exit ();
 }
 
-void head_divert_to_mpf (void)
+void abort_launch_deff (void)
+{
+	seg_alloc_clean ();
+	seg_write_row_center (0, "ABORT");
+	seg_show ();
+	task_sleep (TIME_500MS);
+	seg_alloc_clean ();
+	seg_write_row_center (1, "ABORT");
+	seg_show ();
+	task_sleep (TIME_500MS);
+	deff_exit ();
+}
+
+static void divert_to_mpf_task (void)
 {
 	gate_start ();	
 	task_sleep_sec (4);
 	gate_stop ();
+	task_exit ();
 }
 
-CALLSET_ENTRY (leftramp, sw_left_ramp_enter)
+void left_ramp_flasher_task (void)
 {
-	if (!event_did_follow (left_ramp, left_ramp_fail))
+	U8 n;
+	for (n = 0; n < 6; n++)
 	{
-		sound_send (SND_SHUTTLE_LAUNCH);
-		deff_start (DEFF_SHUTTLE_LAUNCH);
-		head_divert_to_mpf ();
+		flasher_pulse (FLASH_LEFT_RAMP);
+		task_sleep (TIME_166MS);
 	}
-	else
-	{
-		sound_send (SND_ABORT_ABORT);
-	}
-	event_can_follow (left_ramp, left_ramp_fail, TIME_2S);
+	task_exit ();
+}
+
+
+CALLSET_ENTRY (leftramp, l_ramp_entered)
+{
+	sound_send (SND_SHUTTLE_LAUNCH);
+	deff_start (DEFF_SHUTTLE_LAUNCH);
+	//TODO Some rules logic
+	task_create_gid (GID_DIVERT_TO_MPF, divert_to_mpf_task);
+	task_create_gid (GID_LEFT_RAMP_FLASHER, left_ramp_flasher_task);
+}
+
+CALLSET_ENTRY (leftramp, l_ramp_rollback)
+{
+	task_kill_gid (GID_RIGHT_RAMP_FLASHER);
+	if (task_kill_gid (GID_DIVERT_TO_MPF))
+		gate_stop ();
+
+	deff_stop (DEFF_SHUTTLE_LAUNCH);
+	deff_start (DEFF_ABORT_LAUNCH);
+	sound_send (SND_ABORT_ABORT);
+	gate_stop ();
+
 }

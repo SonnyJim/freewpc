@@ -20,6 +20,7 @@
 
 
 #include <freewpc.h>
+#include "wire_ball_lock.h"
 
 CALLSET_ENTRY (head, sw_mouth)
 {
@@ -29,6 +30,8 @@ CALLSET_ENTRY (head, sw_mouth)
 
 CALLSET_ENTRY (head, sw_wireform_bottom)
 {
-	sol_request (SOL_WIRE_POST);
+	//TODO Detect when the wireball lock switch changes state so we can count the balls leaving.
+	wire_ball_lock_start ();
 	task_sleep_sec (1);
+	wire_ball_lock_stop ();
 }
