@@ -32,6 +32,9 @@
 #define SND_POWER_UP6_3		0x9B
 
 #define SND_COIN		0xC0
+#define SND_WHOOSH_UP_1		0xC7
+#define SND_WHOOSH_UP_2		0xC8
+#define SND_WHOOSH_UP_3		0xC9
 #define SND_FLATLINE		0xCF
 #define SND_SKILL_SHOT_LAUNCH	0xB7
 #define SND_SKILL_SHOT_1	0xB8
@@ -45,6 +48,7 @@
 #define SND_BLOOO		0x9A
 #define SND_BALL_DRAIN		0x9F
 #define SND_MPF_EXIT		0xA0
+#define SND_FACE_ENTERED	0xA6
 #define SND_JACKPOT		0xAA
 
 #define SND_CENTRE_RAMP_1	0xA1
