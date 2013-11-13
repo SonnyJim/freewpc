@@ -20,7 +20,6 @@
 
 
 #include <freewpc.h>
-#include <gate.h>
 
 void shuttle_launch_deff (void)
 {
@@ -45,14 +44,6 @@ void abort_launch_deff (void)
 	deff_exit ();
 }
 
-static void divert_to_mpf_task (void)
-{
-	gate_start ();	
-	task_sleep_sec (4);
-	gate_stop ();
-	task_exit ();
-}
-
 void left_ramp_flasher_task (void)
 {
 	U8 n;
@@ -70,19 +61,13 @@ CALLSET_ENTRY (leftramp, l_ramp_entered)
 	sound_send (SND_SHUTTLE_LAUNCH);
 	deff_start (DEFF_SHUTTLE_LAUNCH);
 	//TODO Some rules logic
-	task_create_gid (GID_DIVERT_TO_MPF, divert_to_mpf_task);
 	task_create_gid (GID_LEFT_RAMP_FLASHER, left_ramp_flasher_task);
 }
 
 CALLSET_ENTRY (leftramp, l_ramp_rollback)
 {
 	task_kill_gid (GID_RIGHT_RAMP_FLASHER);
-	if (task_kill_gid (GID_DIVERT_TO_MPF))
-		gate_stop ();
-
 	deff_stop (DEFF_SHUTTLE_LAUNCH);
 	deff_start (DEFF_ABORT_LAUNCH);
 	sound_send (SND_ABORT_ABORT);
-	gate_stop ();
-
 }

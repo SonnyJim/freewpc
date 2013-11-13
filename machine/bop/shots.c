@@ -37,11 +37,13 @@ CALLSET_ENTRY (shots, sw_left_ramp_enter)
 	{
 		//Ball didn't make it up the ramp
 		callset_invoke (l_ramp_rollback);
+		callset_invoke (head_stop_divert);
 	}
 	else
 	{
 		//Start a timer to detect a rollback
 		free_timer_restart (timer_l_ramp_rollback, TIME_3S);
+		callset_invoke (head_check_divert);
 		callset_invoke (l_ramp_entered);
 	}
 }
@@ -49,6 +51,7 @@ CALLSET_ENTRY (shots, sw_left_ramp_enter)
 //Head logic doesn't really need an entry in shots
 CALLSET_ENTRY (shots, sw_enter_head)
 {
+	callset_invoke (head_stop_divert);
 	free_timer_stop (timer_l_ramp_entered);
 	free_timer_restart (timer_head_entered, TIME_4S);
 }
@@ -62,7 +65,7 @@ CALLSET_ENTRY (shots, sw_right_ramp_enter)
 	}
 	else
 	{
-		//Start a timer to detect a rollbac
+		//Start a timer to detect a rollback
 		free_timer_restart (timer_r_ramp_rollback, TIME_2S);
 		free_timer_restart (timer_r_ramp_entered, TIME_3S);
 		callset_invoke (r_ramp_entered);
@@ -77,20 +80,26 @@ CALLSET_ENTRY (shots, sw_right_ramp_made)
 	}
 }
 
-CALLSET_ENTRY (shots, sw_enter_mpf)
+CALLSET_ENTRY (shots, sw_mpf_enter)
 {
 	//Start a timer for the exit switches
-	free_timer_restart (timer_mpf_entered, TIME_4S);
+	//free_timer_restart (timer_mpf_entered, TIME_4S);
+	timer_restart_free (GID_MPF_ENTERED, TIME_4S);
+	callset_invoke (head_stop_divert);
+	callset_invoke (mpf_entered);
 }
 
 CALLSET_ENTRY (shots, sw_mpf_exit_left)
 {
+	/*
 	if (free_timer_test (timer_r_ramp_entered))
 	{
 		//We made it up the heartbeat ramp
 		callset_invoke (r_ramp_entered);
 	}
-	callset_invoke (light_lane);
+	*/
+	if (timer_find_gid (GID_MPF_ENTERED))
+		callset_invoke (light_lane);
 	/*
 	else if (free_timer_test (timer_mpf_entered))
 	{	
@@ -109,7 +118,8 @@ CALLSET_ENTRY (shots, sw_mpf_exit_right)
 	
 	else
 	*/
-	callset_invoke (enable_skill_shot);
+	if (timer_find_gid (GID_MPF_ENTERED))
+		callset_invoke (enable_skill_shot);
 //	free_timer_restart (timer_heartbeat_to_skill, TIME_5S);
 }
 
@@ -125,7 +135,16 @@ CALLSET_ENTRY (shots, sw_shooter_lane)
 }
 
 CALLSET_ENTRY (shots, sw_right_loop_top)
-{/*
+{
+	/*
+	if (timer_kill_gid (GID_RIGHT_LOOP_BOTTOM))
+	{
+		callset_invoke (right_loop_completed);
+	}
+	else
+		timer_restart_free (GID_RIGHT_LOOP_TOP, TIME_2S);
+*/
+	/*
 	if (free_timer_test (timer_r_loop_bottom_entered))
 	{
 		//We got here from the bottom entrance
@@ -140,4 +159,12 @@ CALLSET_ENTRY (shots, sw_right_loop_top)
 CALLSET_ENTRY (shots, sw_right_loop_bottom)
 {
 	callset_invoke (right_loop_completed);
+	/*
+	if (timer_kill_gid (GID_RIGHT_LOOP_TOP))
+	{
+		callset_invoke (right_loop_completed);
+	}
+	else
+		timer_restart_free (GID_RIGHT_LOOP_BOTTOM, TIME_2S);
+		*/
 }

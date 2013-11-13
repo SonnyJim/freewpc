@@ -53,9 +53,11 @@ PINMAME_OTHER_ROMS = Mach_u*
 
 GAME_OBJS =
 
+GAME_TEST_OBJS = head_test.o
+
 GAME_PAGED_OBJS = leffs.o skill.o outhole.o jets.o head.o \
 		lanes.o loop.o rightramp.o leftramp.o spinner.o config.o \
-		shots.o standups.o wheel.o bonus.o deffs.o
+		shots.o standups.o wheel.o bonus.o deffs.o mpf.o multiball.o
 
 GAME_INCLUDES =
 

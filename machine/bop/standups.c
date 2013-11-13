@@ -24,6 +24,19 @@
 
 U8 standup_multiplier;
 U8 standup_counter;
+U8 multiply_mode_timer;
+
+struct timed_mode_ops multiply_mode = {
+	DEFAULT_MODE,
+	.gid = GID_MULTIPLY_MODE_RUNNING,
+	.init_timer = 15,
+	.prio = PRI_GAME_MODE3,
+	.timer = &multiply_mode_timer,
+	.deff_running = DEFF_STANDUP_MULTIPLIER,
+	.grace_timer = 3,
+	.pause = system_timer_pause,
+};
+
 
 static void flash_standup_lamps (void)
 {
@@ -52,6 +65,21 @@ void standup_multiplier_deff (void)
 	deff_exit ();
 }
 
+CALLSET_ENTRY (standups, lamp_update)
+{
+	if (timed_mode_running_p (&multiply_mode))
+	{
+		if (standup_multiplier > 0)
+			lamp_on (LM_VALUES_X2);
+		else if (multiply_mode_timer > 0 && multiply_mode_timer < 5)
+			lamp_flash_on (LM_VALUES_X2);
+	}
+	else
+	{
+		lamp_off (LM_VALUES_X2);
+		lamp_flash_off (LM_VALUES_X2);
+	}
+}
 
 static void check_standup_group (void)
 {
@@ -61,11 +89,13 @@ static void check_standup_group (void)
 		bounded_increment (standup_multiplier, 4);
 		score_multiplier_set (standup_multiplier);
 		deff_start (DEFF_STANDUP_MULTIPLIER);
-		clear_standup_lamps ();
-		if (standup_multiplier == 2)
-			lamp_on (LM_VALUES_X2);
+		if (!timed_mode_running_p (&multiply_mode))
+			timed_mode_begin (&multiply_mode);
 		else
-			lamp_flash_on (LM_VALUES_X2);
+			timed_mode_add (&multiply_mode, 15);
+
+		clear_standup_lamps ();
+		
 	}
 
 	if (standup_multiplier == 4)
@@ -108,6 +138,11 @@ CALLSET_ENTRY (standups, start_ball)
 	standup_multiplier  = 1;
 	standup_counter = 0;
 	lamp_off (LM_VALUES_X2);
+}
+
+CALLSET_ENTRY (standups, end_ball)
+{
+	timed_mode_end (&multiply_mode);
 }
 
 CALLSET_ENTRY (standups, sw_left_standup)

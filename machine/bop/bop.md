@@ -49,55 +49,55 @@ define MACHINE_HIGH_SCORES { 0x00, 0x10, 0x00, 0x00, 0x00 }, { 0x00, 0x09, 0x00,
 # given in terms of the Lamp-Matrix-Width and Lamp-Matrix-Height.
 ##########################################################################
 [lamps]
-11: Left Outlane
-12: Left Inlane
-13: Right Inlane
-14: Right Outlane
-15: Left Standup
-16: Right Top Standup
-17: Right Bottom Standup
-18: Shoot Again, shoot-again
-21: SW Lite Jackpot
-22: BW Lite Billion
-23: BW Extra Ball
-24: SW Lite Extra Ball
-25: SW 50K
-26: SW 100K
-27: Values x2
-28: Spin SW
-31: SW 250K
-32: BW 10M
-33: BW 50M
-34: BW Special
-35: BW 5M
-36: BW 1M
-37: Space Shuttle
-38: Launch Pad
-41: Skill Shot 50K
-42: Skill Shot 75K
-43: Skill Shot 100K
-44: Skill Shot 200K
-45: Skill Shot 25K
-46: Left Eye
-47: Right Eye
-48: Mouth
-51: Left Loop 500K
-52: Left Loop 100K
-53: Left Loop 50K
-54: Left Loop 25K
-55: Right Loop 500K
-56: Right Loop 100K
-57: Right Loop 50K
-58: Right Loop 25K
-61: Right Ramp 100K
-62: Right Ramp 500K
-63: Right Ramp 1M
-64: Wire ball lock
-65: Jet 500K
-66: Jet 100K
-67: Jet 50K
-68: Jet 25K
-71: Jackpot 8M
+11: Left Outlane, y(35), x(5)
+12: Left Inlane, y(37), x(10)
+13: Right Inlane, y(37), x(65)
+14: Right Outlane, y(35), x(72)
+15: Left Standup, y(54), x(13)
+16: Right Top Standup, y(58), x(60)
+17: Right Bottom Standup, y(52), x(62)
+18: Shoot Again, shoot-again, y(10), x(32)
+21: SW Jackpot Lit, y(50), x(40)
+22: BW Lite Billion, y(57), x(40)
+23: SW Extra Ball, y(40), x(44)
+24: SW Lite Extra Ball, y(37), x(40)
+25: SW 50K, y(40), x(33)
+26: SW 100K, y45), x(33)
+27: Values x2, y(44), x(40)
+28: Spin Small Wheel, y(68), x(10)
+31: SW 250K, y(45), x(44) 
+32: BW 10M, y(49), x(47)
+33: BW 50M, y(38), x(50)
+34: BW Special, y(32), x(40)
+35: BW 5M, y(37), x(27)
+36: BW 1M, y(49), x(27)
+37: Space Shuttle, y(72), x(20)
+38: Launch Pad, y(63), x(21)
+41: Skill Shot 50K, y(65), x(75)
+42: Skill Shot 75K, y(76), x(75)
+43: Skill Shot 100K, y(87), x(75)
+44: Skill Shot 200K, y(98), x(75)
+45: Skill Shot 25K, y(109), x(75)
+46: Left Eye, y(129), x(29)
+47: Right Eye, y(129), x(39)
+48: Mouth, y(122), x(34)
+51: Left Loop 500K, y(80), x(27)
+52: Left Loop 100K, y(75), x(28)
+53: Left Loop 50K, y(71), x(30)
+54: Left Loop 25K, y(67), x(32)
+55: Right Loop 500K, y(78), x(62)
+56: Right Loop 100K, y(73), x(60)
+57: Right Loop 50K, y(69), x(57)
+58: Right Loop 25K, y(64), x(56)
+61: Right Ramp 1M, y74), x(40)
+62: Right Ramp 500K, y(80), x(40)
+63: Right Ramp 100K, y(84), x(40)
+64: Wire lock ,y(100), x(30)
+65: Jets 500K, y(80), x(53)
+66: Jets 100K, y(74), x(51)
+67: Jets 50K, y(70), x(50)
+68: Jets 25K, y(66), x(48)
+71: Jackpot 8M, 
 72: Jackpot 7M
 73: Jackpot 6M
 74: Jackpot 5M
@@ -110,9 +110,9 @@ define MACHINE_HIGH_SCORES { 0x00, 0x10, 0x00, 0x00, 0x00 }, { 0x00, 0x09, 0x00,
 83: Backglass Knee
 84: Backglass Foot
 85: Backglass Shoulder
-86: MPF 100K
-87: MPF 200K
-88: MPF 300K
+86: MPF 100K, y(160), x(66)
+87: MPF 200K, y(160), x(73)
+88: MPF 300K, y(160), x(78)
 
 
 ##########################################################################
@@ -152,7 +152,7 @@ define MACHINE_HIGH_SCORES { 0x00, 0x10, 0x00, 0x00, 0x00 }, { 0x00, 0x09, 0x00,
 26: Trough Center, noscore, edge, trough
 27: Trough Left, noscore, edge, trough
 28: Left Standup, standup
-31: Skill Shot 50K, ingame
+31: Skill Shot 50K, edge
 32: Skill Shot 75K, ingame
 33: Skill Shot 100K, ingame
 34: Skill Shot 200K, ingame
@@ -177,14 +177,14 @@ define MACHINE_HIGH_SCORES { 0x00, 0x10, 0x00, 0x00, 0x00 }, { 0x00, 0x09, 0x00,
 63: Left Eye, intest
 64: Right Eye, intest
 65: Mouth, intest
-67: Face Position, edge, intest
-71: Wireform Top
-72: Wireform Bottom
-73: Enter MPF
-74: MPF Exit Left
-75: MPF Exit Right
-76: Left Ramp Enter
-77: Right Ramp Enter
+67: Face Position, intest, novalid
+71: Wire Lock Top, intest
+72: Wire Lock Bottom, intest
+73: MPF Enter, ingame
+74: MPF Exit Left, ingame
+75: MPF Exit Right, ingame
+76: Left Ramp Enter, ingame
+77: Right Ramp Enter, ingame
 
 ##########################################################################
 # Drives
@@ -252,7 +252,7 @@ A4: Head Motor, motor, nosearch
 # These are additional test items that should appear in the TESTS menu.
 ##########################################################################
 [tests]
-
+Head:
 
 ##########################################################################
 # Lampsets
@@ -276,14 +276,39 @@ Playfield: PF:all
 Lanes: Left Outlane..Right Outlane
 Left loops: Left Loop 500K..Left Loop 25K
 Right loops: Right Loop 500K..Right Loop 25K
+Right Ramps: Right Ramp 100K..Right Ramp 1M
 Skill Shot: Skill Shot 50K..Skill Shot 25K
-Little Wheel: SW Lite Jackpot, SW Lite Extra Ball, SW 50K, SW 100K, SW 250K
-Big Wheel: BW Lite Billion, BW Extra Ball, BW 10M, BW 50M, BW Special, BW 5M, BW 1M
+Small Wheel: SW Jackpot Lit, SW 250K, SW Extra Ball,  SW Lite Extra Ball, SW 50K, SW 100K
+Big Wheel: BW Lite Billion, BW 10M, BW 50M, BW Special, BW 5M, BW 1M
+Jets enter: Jets 500K..Jets 25K
+MPF: MPF 100K..MPF 300K
+Lower_pf: Left Outlane..Right Bottom Standup
+Lanes: Left Outlane..Right Outlane
+Left Ramps:Space Shuttle, Launch Pad, Spin Small Wheel
+
+Bottom to top: PF:lamp_sort_bottom_to_top
+Top to bottom: PF:lamp_sort_top_to_bottom
+LTR: PF:lamp_sort_left_to_right
+RTL: PF:lamp_sort_right_to_left
+Circle Out: PF:lamp_sort_circle_out
+##########################################################################
+# Lamp effects
+##########################################################################
+[leffs]
+Amode: page(MACHINE_PAGE)
+#Circle Out: PRI_LEFF3, LAMPS(CIRCLE_OUT), page(MACHINE_PAGE)
+#Shooter: PRI_LEFF2, page(MACHINE_PAGE)
+Skill Strobe: page(MACHINE_PAGE), PRI_LEFF3, LAMPS(SKILL_SHOT)
+Strobe Up: page(MACHINE_PAGE), PRI_LEFF2, LAMPS(BOTTOM_TO_TOP)
+Jets Completed: page(MACHINE_PAGE), PRI_LEFF3, LAMPS(JETS_ENTER)
 
 [containers]
 Trough: Trough Release, trough, Trough Left, Trough Center, Trough Right, init_max_count(3)
 
-Head: Wire Ball Lock, init_max_count(0), Enter Head, Wireform Top, Wireform Bottom
+Left Eye: Left Eye, init_max_count(0), Left Eye
+Right Eye: Right Eye, init_max_count(0), Right Eye
+Mouth: Mouth, init_max_count(0), Mouth
+Wire Ball Lock: Wire Ball Lock, init_max_count(0), Wire Lock Top, Wire Lock Bottom
 
 UPFKicker: UPF Kicker, init_max_count(0), Under Playfield Kickback
 
@@ -355,7 +380,7 @@ Volume Change: MUS_SECRET_FANFARE
 [flags]
 Skill shot enabled:
 
-Jackpot Lit:
+SW Jackpot:
 EB Lit:
 50K Skill Shot:
 100K Skill Shot:
@@ -378,6 +403,13 @@ BW Completed:
 25K SS Made:
 Skill missed:
 
+[globalflags]
+Head Broken:
+Super Jackpot Lit:
+MB Jackpot Lit:
+
+
+
 ##########################################################################
 # Display effects
 # The higher the value, the greater the priority it has
@@ -397,15 +429,15 @@ Abort Launch: page(MACHINE_PAGE), PRI_GAME_QUICK6, D_RESTARTABLE
 Rollover Completed: page(MACHINE_PAGE), PRI_GAME_QUICK2, D_RESTARTABLE
 Wheel: page(MACHINE_PAGE), PRI_GAME_MODE3, D_QUEUED+D_PAUSE
 Bonus: page(MACHINE_PAGE), PRI_BONUS
+Calibrating Head: page(MACHINE_PAGE), PRI_BALL_SEARCH
 
-##########################################################################
-# Lamp effects
-##########################################################################
-[leffs]
-Amode: runner, PRI_LEFF1, LAMPS(PLAYFIELD), GI(ALL), page(MACHINE_PAGE)
-#Circle Out: PRI_LEFF3, LAMPS(CIRCLE_OUT), page(MACHINE_PAGE)
-#Shooter: PRI_LEFF2, page(MACHINE_PAGE)
-Skill Strobe: page(MACHINE_PAGE), PRI_LEFF3, LAMPS(SKILL_SHOT)
+Jackpot: page(MACHINE_PAGE), PRI_JACKPOT, D_QUEUED+D_PAUSE
+Super Jackpot: page(MACHINE_PAGE), PRI_JACKPOT, D_QUEUED+D_PAUSE
+Super Jackpot Value: page(MACHINE_PAGE), PRI_JACKPOT, D_QUEUED+D_PAUSE
+
+I Can Speak: page(MACHINE_PAGE), PRI_GAME_MODE7, D_QUEUED+D_PAUSE
+Ball locked: page(MACHINE_PAGE), PRI_GAME_MODE8, D_QUEUED+D_PAUSE
+
 
 [templates]
 
@@ -426,16 +458,16 @@ Lower Jet: driver(spsol), sw=SW_LOWER_JET, sol=SOL_LOWER_JET, ontime=4, offtime=
 
 Gate: driver(duty), sol=SOL_MPF_GATE, ontime=TIME_300MS, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=60
 
-Head Motor: driver(duty), sol=SOL_HEAD_MOTOR, ontime=0, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=20
-Head Motor Relay: driver(duty), sol=SOL_HEAD_MOTOR_RELAY, ontime=0, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=20
+Head Motor: driver(duty), sol=SOL_HEAD_MOTOR, ontime=0, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=255
+Head Motor Relay: driver(duty), sol=SOL_HEAD_MOTOR_RELAY, ontime=0, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=255
 
 Outhole: driver(outhole), sol=SOL_OUTHOLE, swno=SW_OUTHOLE, swevent=sw_outhole
 
-Wire Ball Lock: driver(duty), sol=SOL_WIRE_BALL_LOCK, ontime=TIME_300MS, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=1
+Wire Ball Lock: driver(duty), sol=SOL_WIRE_BALL_LOCK, ontime=TIME_1S, duty_ontime=TIME_33MS, duty_offtime=TIME_16MS, timeout=1
 
 [system_sounds]
 Add Coin: SND_COIN
 Add Credit: SND_THANK_YOU
 Start Game: SND_STANDBY
 Tilt Warning: SND_TILT_WARNING
-Tlt: SND_TILT
+Tilt: SND_TILT

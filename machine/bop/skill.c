@@ -53,10 +53,22 @@ void skill_shot_deff (void)
 	deff_exit ();
 }
 
+static void reset_skill_shot (void)
+{
+	flag_off (FLAG_50K_SS_MADE);
+	flag_off (FLAG_75K_SS_MADE);
+	flag_off (FLAG_100K_SS_MADE);
+	flag_off (FLAG_200K_SS_MADE);
+	flag_off (FLAG_25K_SS_MADE);
+}
+
 CALLSET_ENTRY (skill, enable_skill_shot)
 {
 	flag_on (FLAG_SKILL_SHOT_ENABLED);
 	//Turn off GI
+
+
+		
 	if (!flag_test (FLAG_50K_SS_MADE) 
 			&& !flag_test (FLAG_75K_SS_MADE)
 			&& !flag_test (FLAG_100K_SS_MADE)
@@ -184,13 +196,17 @@ void award_skill_switch (U8 sw)
 			deff_start (DEFF_SKILL_SHOT);
 			lamp_flash_task (sw);
 		}
-	}
-}
 
-CALLSET_ENTRY (skill, ball_search)
-{
-	//if (switch_poll_logical (SW_SKILL_SHOT_50K))
-		sol_request (SOL_SSHOT_KICKER);
+		if (flag_test (FLAG_50K_SS_MADE) 
+			&& flag_test (FLAG_75K_SS_MADE)
+			&& flag_test (FLAG_100K_SS_MADE)
+			&& flag_test (FLAG_200K_SS_MADE)
+			&& flag_test (FLAG_25K_SS_MADE))
+		{
+			reset_skill_shot ();
+		}
+
+	}
 }
 
 CALLSET_ENTRY (skill, start_ball)
@@ -201,18 +217,17 @@ CALLSET_ENTRY (skill, start_ball)
 
 CALLSET_ENTRY (skill, dev_trough_kick_attempt)
 {
-//	free_timer_restart (timer_shooter_ignore_trough_kick, TIME_1S);
+	free_timer_restart (timer_shooter_ignore_trough_kick, TIME_1S);
 }
 
 CALLSET_ENTRY (skill, sw_shooter)
 {
-	/*
 	if (flag_test (FLAG_SKILL_SHOT_ENABLED) && !free_timer_test (timer_shooter_ignore_trough_kick))
 	{
 		sound_send (SND_SKILL_SHOT_LAUNCH);
+//		leff_start (LEFF_STROBE_UP);
 		task_recreate_gid (GID_SHOOTER_FLASHER, shooter_flasher_task);
 	}
-	*/
 }
 
 static void skill_shot_kicker_bug_task (void)

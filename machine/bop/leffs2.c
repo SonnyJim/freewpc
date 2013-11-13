@@ -20,3 +20,25 @@
 
 
 #include <freewpc.h>
+
+
+
+static void pf_strobe_up_subtask (void)
+{
+	for (;;)
+		lamplist_apply (LAMPLIST_BOTTOM_TO_TOP, leff_toggle);
+}
+
+void strobe_up_leff (void)
+{
+	leff_create_peer (gi_cycle_leff);
+	lamplist_set_apply_delay (TIME_16MS);
+	leff_create_peer (pf_strobe_up_subtask);
+	task_sleep (TIME_200MS);
+	leff_create_peer (pf_strobe_up_subtask);
+	task_sleep_sec (1);
+	task_kill_peers ();
+	leff_exit ();
+}
+
+

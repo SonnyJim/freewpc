@@ -75,6 +75,7 @@ static void flash_lanes_task (void)
 	lamplist_apply (LAMPLIST_LANES, lamp_flash_on);
 	task_sleep_sec (1);
 	lamplist_apply (LAMPLIST_LANES, lamp_flash_off);
+	task_exit ();
 }
 
 static void award_rollover_completed (void)
