@@ -31,6 +31,8 @@
 
 use Data::Dumper;
 
+use lib ("./");
+
 @EXPORT = qw (m);
 
 ############### Global Variables ####################
