@@ -35,7 +35,7 @@
  */
 
 #ifdef CONFIG_MMIO
-extern inline void writeb (IOPTR addr, U8 val)
+inline void writeb (IOPTR addr, U8 val)
 {
 	*(volatile U8 *)addr = val;
 	barrier ();
@@ -46,7 +46,7 @@ void writeb (IOPTR addr, U8 val);
 #error
 #endif
 
-extern inline void writew (IOPTR addr, U16 val)
+inline void writew (IOPTR addr, U16 val)
 {
 #ifdef CONFIG_MMIO
 	*(volatile U16 *)addr = val;
@@ -59,7 +59,7 @@ extern inline void writew (IOPTR addr, U16 val)
 
 
 #ifdef CONFIG_MMIO
-extern inline U8 readb (IOPTR addr)
+inline U8 readb (IOPTR addr)
 {
 	return *(volatile U8 *)addr;
 }

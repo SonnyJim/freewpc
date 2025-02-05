@@ -79,10 +79,11 @@
 
 #include <freewpc.h>
 
+
 /**
  * Return the current system time.
  */
-extern inline U16 get_sys_time (void)
+inline U16 get_sys_time (void)
 {
 	extern U16 sys_time;
 	return sys_time;
@@ -95,7 +96,7 @@ extern inline U16 get_sys_time (void)
  * This function returns an 8-bit value so it can only
  * report up to about four seconds.
  */
-extern inline U8 get_elapsed_time (U16 then)
+inline U8 get_elapsed_time (U16 then)
 {
 	return get_sys_time () - then;
 }

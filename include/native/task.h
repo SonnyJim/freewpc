@@ -74,7 +74,7 @@ extern aux_task_data_t task_data_table[NUM_TASKS];
 #ifdef CONFIG_SIM
 void ui_write_task (int, task_gid_t);
 #else
-extern inline void ui_write_task (int t, task_gid_t g) {}
+inline void ui_write_task (int t, task_gid_t g) {}
 #endif /* CONFIG_SIM */
 void task_dump (void);
 void task_init (void);
@@ -132,7 +132,7 @@ void aux_task_delete (task_pid_t tp);
 #endif
 
 /** Sleep for an integer number of seconds */
-extern inline void task_sleep_sec (U8 n)
+inline void task_sleep_sec (U8 n)
 {
 	if (n <= 4)
 		task_sleep (TIME_1S * n);
@@ -142,7 +142,7 @@ extern inline void task_sleep_sec (U8 n)
 
 
 /** Go into an infinite waiting loop, without exiting. */
-extern inline void task_suspend (void)
+inline void task_suspend (void)
 {
 	/* Use 4s since that is about the maximum time that the task API
 	supports in one call. */
@@ -157,7 +157,7 @@ extern inline void task_suspend (void)
  * This call is intended to keep the software watchdog from expiring,
  * in places where it might because a task is doing a long computation.
  */
-extern inline void task_runs_long (void)
+inline void task_runs_long (void)
 {
 	/* Manually reset the watchdog flag */
 	extern U8 task_dispatching_ok;
@@ -181,7 +181,7 @@ extern inline void task_runs_long (void)
 		pid; })
 
 
-extern inline task_pid_t
+inline task_pid_t
 far_task_create_gid (task_gid_t gid, task_function_t fn, U8 page)
 {
 	task_pid_t pid = task_create_gid (gid, fn);
@@ -189,7 +189,7 @@ far_task_create_gid (task_gid_t gid, task_function_t fn, U8 page)
 	return pid;
 }
 
-extern inline task_pid_t
+inline task_pid_t
 far_task_create_gid1 (task_gid_t gid, task_function_t fn, U8 page)
 {
 	task_pid_t pid = task_create_gid1 (gid, fn);
@@ -197,7 +197,7 @@ far_task_create_gid1 (task_gid_t gid, task_function_t fn, U8 page)
 	return pid;
 }
 
-extern inline task_pid_t
+inline task_pid_t
 far_task_recreate_gid (task_gid_t gid, task_function_t fn, U8 page)
 {
 	task_pid_t pid = task_recreate_gid (gid, fn);

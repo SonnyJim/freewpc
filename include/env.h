@@ -41,10 +41,18 @@
  * or may not be available depending on the compiler
  * version used. */
 
+#ifdef CONFIG_NATIVE
+#define __fastram__
+#define __nvram__
+#define __local__
+#define __permanent__
+#else
 #define __fastram__ __attribute__((section("direct")))
 #define __nvram__ __attribute__((section ("nvram")))
 #define __local__ __attribute__((section ("local")))
 #define __permanent__ __attribute__((section ("permanent")))
+#endif
+
 
 /** Section declaration modifiers.  These attributes are used
  * on function prototypes and data externs to denote which

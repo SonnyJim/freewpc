@@ -26,35 +26,38 @@
 #ifndef _PLATFORM_NATIVE_H
 #define _PLATFORM_NATIVE_H
 
+#define pthread_t int
+
+
 #define far_call_pointer(function, page, arg) (*function) (arg)
 #define slow_memcpy memcpy
 #define slow_memset memset
 
-extern inline U8 far_read8 (const void *address, U8 page)
+inline U8 far_read8 (const void *address, U8 page)
 {
 	return *(U8 *)address;
 }
 
-extern inline U16 far_read16 (const void *address, U8 page)
+inline U16 far_read16 (const void *address, U8 page)
 {
 	return *(U16 *)address;
 }
 
-extern inline void *far_read_pointer (const void *address, U8 page)
+inline void *far_read_pointer (const void *address, U8 page)
 {
 	return *(void **)address;
 }
 
 typedef void (*void_function) (void);
 
-extern inline void far_indirect_call_handler (void_function address, U8 page)
+inline void far_indirect_call_handler (void_function address, U8 page)
 {
 	address ();
 }
 
 typedef U8 (*value_function) (void);
 
-extern inline U8 far_indirect_call_value_handler (value_function address, U8 page)
+inline U8 far_indirect_call_value_handler (value_function address, U8 page)
 {
 	return address ();
 }
