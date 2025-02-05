@@ -496,7 +496,7 @@ struct buffer *buffer_replace (struct buffer *old, struct buffer *new)
 
 struct img_histogram *histogram_update (struct buffer *buf)
 {
-	struct img_histogram *hist;
+	struct img_histogram *hist = NULL;
 	unsigned int off;
 	unsigned int i;
 	int largest;
@@ -662,7 +662,7 @@ struct buffer *buffer_compress (struct buffer *buf, struct buffer *prev)
 	U8 *rleptr;
 	unsigned int last, last_count;
 	int n;
-	U8 sentinel;
+	U8 sentinel = 0;
 
 	/* Update the image histogram */
 	histogram_update (buf);
