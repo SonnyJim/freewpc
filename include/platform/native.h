@@ -26,8 +26,8 @@
 #ifndef _PLATFORM_NATIVE_H
 #define _PLATFORM_NATIVE_H
 
-#define pthread_t int
-
+//#define pthread_t int
+#include <pthread.h>
 
 #define far_call_pointer(function, page, arg) (*function) (arg)
 #define slow_memcpy memcpy

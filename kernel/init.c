@@ -201,11 +201,11 @@ __noreturn__ void freewpc_init (void)
 	task_exit ();
 }
 
-
+/*
 U8 get_elapsed_time (U16 then)
 {
 	return get_sys_time () - then;
 }
-
+*/
 
 
