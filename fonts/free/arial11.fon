@@ -1,5 +1,5 @@
 #include <freewpc.h>
-extern const char *arial11_glyphs[] = {
+const char *arial11_glyphs[] = {
 	['A'] = glyph_arial11_A_bits,
 	['B'] = glyph_arial11_B_bits,
 	['C'] = glyph_arial11_C_bits,
@@ -39,5 +39,5 @@ extern const char *arial11_glyphs[] = {
 };
 const font_t font_arial11 = {
 	.height = ,
-	.glyphs = arial11_glyphs,
+	.glyphs =(char **)  arial11_glyphs,
 };
